@@ -14,8 +14,10 @@
 - [x] JS Bridge wired to `CoreWebView2.ExecuteScriptAsync` / `WebMessageReceived`
 - [x] Custom URI scheme support (serve local assets without HTTP server)
 - [x] Basic sample running end-to-end on Windows
-- [ ] Window lifecycle management (min/max/close events)
-- [ ] Frameless / transparent window mode
+- [x] **AOT-compatible Win32 window host** — raw Win32 P/Invoke, no WinForms/WPF
+- [x] `OmniWindowStyle.Frameless` + window-control JS bridge (`minimize`, `maximize`, `close`, `startDrag`)
+- [ ] Window lifecycle management (min/max/close events via OS hook)
+- [ ] Frameless drag-region HTML attribute (`omni-drag`)
 - [ ] Multi-window support
 - [ ] Splash screen helper
 
