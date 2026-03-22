@@ -7,7 +7,7 @@ namespace OmniWebHost;
 public interface IDesktopApp
 {
     /// <summary>
-    /// Called after the host window and WebView adapter have been initialised,
+    /// Called after the host window and WebView adapter have been initialized,
     /// but before the main message loop starts.
     /// </summary>
     Task OnStartAsync(IWebViewAdapter adapter, CancellationToken cancellationToken = default);

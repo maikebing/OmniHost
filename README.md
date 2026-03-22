@@ -65,13 +65,27 @@ using OmniWebHost.WebView2;
 var app = OmniApp.CreateBuilder(args)
     .Configure(o =>
     {
-        o.Title   = "My App";
-        o.StartUrl = "https://example.com";
+        o.Title           = "My App";
+        o.CustomScheme    = "app";
+        o.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        o.StartUrl        = "app://localhost/index.html";
     })
     .UseAdapter(new WebView2AdapterFactory())
+    .UseRuntime(new WinFormsRuntime())
+    .UseDesktopApp(new MyApp())
     .Build();
 
 await app.RunAsync();
+```
+
+In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
+
+```js
+// JS → .NET
+const result = await window.omni.invoke('greet', 'World');
+
+// .NET → JS push events
+window.omni.on('tick', (data) => console.log(data.time));
 ```
 
 ---

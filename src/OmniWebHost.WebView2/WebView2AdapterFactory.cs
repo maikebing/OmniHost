@@ -1,3 +1,5 @@
+using Microsoft.Web.WebView2.Core;
+
 namespace OmniWebHost.WebView2;
 
 /// <summary>
@@ -9,11 +11,26 @@ public sealed class WebView2AdapterFactory : IWebViewAdapterFactory
     public string AdapterId => "webview2";
 
     /// <summary>
-    /// Returns <see langword="true"/> when the WebView2 runtime is available on this machine.
-    /// Full runtime detection will be implemented in a future step.
+    /// Returns <see langword="true"/> when the WebView2 Evergreen runtime is installed
+    /// on the current Windows machine.
     /// </summary>
-    public bool IsAvailable =>
-        OperatingSystem.IsWindows(); // TODO: also check for installed WebView2 runtime
+    public bool IsAvailable
+    {
+        get
+        {
+            if (!OperatingSystem.IsWindows()) return false;
+            try
+            {
+                CoreWebView2Environment.GetAvailableBrowserVersionString();
+                return true;
+            }
+            catch (WebView2RuntimeNotFoundException)
+            {
+                return false;
+            }
+        }
+    }
 
     public IWebViewAdapter Create() => new WebView2Adapter();
 }
+

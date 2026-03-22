@@ -2,16 +2,23 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>OmniWebHost.WebView2</RootNamespace>
     <AssemblyName>OmniWebHost.WebView2</AssemblyName>
     <Version>0.1.0-preview.1</Version>
-    <Description>Microsoft WebView2 adapter for OmniWebHost – Windows-first WebView2 browser adapter.</Description>
+    <NoWarn>MSB3277</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\OmniWebHost.Abstractions\OmniWebHost.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
+

@@ -15,6 +15,6 @@ public interface IWebViewAdapterFactory
     /// </summary>
     bool IsAvailable { get; }
 
-    /// <summary>Creates a new, uninitialised <see cref="IWebViewAdapter"/> instance.</summary>
+    /// <summary>Creates a new, uninitialized <see cref="IWebViewAdapter"/> instance.</summary>
     IWebViewAdapter Create();
 }

@@ -10,13 +10,10 @@
 - [x] `OmniWebHost` — `OmniApp.CreateBuilder` entry point
 - [x] `OmniWebHost.Hosting` — `IHostBuilder` extensions
 - [x] `OmniWebHost.WebView2` — WebView2 adapter placeholder
-- [ ] Real WebView2 runtime initialisation (`CoreWebView2Environment`)
-- [ ] JS Bridge wired to `CoreWebView2.ExecuteScriptAsync` / `WebMessageReceived`
-- [ ] Custom URI scheme support (serve local assets without HTTP server)
-- [ ] Basic sample running end-to-end on Windows
-
-## 0.2.x — Windows Stable
-
+- [x] Real WebView2 runtime initialisation (`CoreWebView2Environment`)
+- [x] JS Bridge wired to `CoreWebView2.ExecuteScriptAsync` / `WebMessageReceived`
+- [x] Custom URI scheme support (serve local assets without HTTP server)
+- [x] Basic sample running end-to-end on Windows
 - [ ] Window lifecycle management (min/max/close events)
 - [ ] Frameless / transparent window mode
 - [ ] Multi-window support

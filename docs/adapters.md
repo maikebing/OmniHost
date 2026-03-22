@@ -11,7 +11,7 @@ Each adapter wraps a concrete browser engine and exposes a uniform `IWebViewAdap
 
 | Package | Engine | Platform | Status |
 |---------|--------|----------|--------|
-| `OmniWebHost.WebView2` | Microsoft WebView2 | Windows 10/11 | 🚧 Preview (placeholder) |
+| `OmniWebHost.WebView2` | Microsoft WebView2 | Windows 10/11 | ✅ Preview (functional) |
 | `OmniWebHost.Cef` | Chromium Embedded Framework | Windows / macOS / Linux | 📋 Planned |
 | `OmniWebHost.WKWebView` | WKWebView | macOS | 📋 Planned |
 | `OmniWebHost.WebKitGtk` | WebKitGTK | Linux | 📋 Planned |

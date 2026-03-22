@@ -8,6 +8,8 @@ public sealed class OmniWebHostBuilder
 {
     private OmniWebHostOptions _options = new();
     private IWebViewAdapterFactory? _adapterFactory;
+    private IDesktopRuntime? _runtime;
+    private IDesktopApp? _desktopApp;
     private string[] _args = Array.Empty<string>();
 
     public OmniWebHostBuilder() { }
@@ -32,6 +34,20 @@ public sealed class OmniWebHostBuilder
         return this;
     }
 
+    /// <summary>Registers the desktop runtime (window host + message loop).</summary>
+    public OmniWebHostBuilder UseRuntime(IDesktopRuntime runtime)
+    {
+        _runtime = runtime;
+        return this;
+    }
+
+    /// <summary>Registers application lifecycle callbacks.</summary>
+    public OmniWebHostBuilder UseDesktopApp(IDesktopApp app)
+    {
+        _desktopApp = app;
+        return this;
+    }
+
     /// <summary>Builds and returns the configured application.</summary>
     public IOmniWebHostApp Build()
     {
@@ -39,6 +55,11 @@ public sealed class OmniWebHostBuilder
             throw new InvalidOperationException(
                 "No IWebViewAdapterFactory registered. Call UseAdapter() before Build().");
 
-        return new OmniWebHostApp(_options, _adapterFactory);
+        if (_runtime is null)
+            throw new InvalidOperationException(
+                "No IDesktopRuntime registered. Call UseRuntime() before Build().");
+
+        return new OmniWebHostApp(_options, _adapterFactory, _runtime, _desktopApp);
     }
 }
+

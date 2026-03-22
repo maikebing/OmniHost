@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OmniWebHost Basic Sample</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; color: #7dd3fc; }
+    header p  { margin-top: .4rem; color: #94a3b8; font-size: .95rem; }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 { font-size: 1.05rem; font-weight: 600; color: #7dd3fc; margin-bottom: 1rem; }
+
+    .row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+
+    input[type="text"] {
+      flex: 1;
+      padding: .5rem .75rem;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: .9rem;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: #7dd3fc; }
+
+    button {
+      padding: .5rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      background: #0ea5e9;
+      color: #fff;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    button:hover { background: #38bdf8; }
+    button:active { background: #0284c7; }
+
+    .output {
+      margin-top: 1rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .875rem;
+      color: #94a3b8;
+      min-height: 2.5rem;
+      word-break: break-all;
+    }
+    .output.ok  { color: #86efac; border-color: #166534; }
+    .output.err { color: #fca5a5; border-color: #991b1b; }
+
+    .tick-badge {
+      display: inline-block;
+      background: #0ea5e9;
+      color: #fff;
+      border-radius: 6px;
+      padding: .15rem .6rem;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌐 OmniWebHost</h1>
+    <p>Basic Sample — WebView2 running inside a native WinForms window</p>
+  </header>
+
+  <!-- Greet handler -->
+  <div class="card">
+    <h2>JS → .NET Bridge · <code>window.omni.invoke("greet", name)</code></h2>
+    <div class="row">
+      <input type="text" id="name-input" placeholder="Your name" value="World" />
+      <button id="btn-greet">Greet from .NET</button>
+    </div>
+    <div class="output" id="greet-output">Result will appear here…</div>
+  </div>
+
+  <!-- Sysinfo handler -->
+  <div class="card">
+    <h2>JS → .NET Bridge · <code>window.omni.invoke("sysinfo")</code></h2>
+    <button id="btn-sysinfo">Get System Info</button>
+    <div class="output" id="sysinfo-output">Result will appear here…</div>
+  </div>
+
+  <!-- Tick event (server-push) -->
+  <div class="card">
+    <h2>.NET → JS Event · <code>window.omni.on("tick", …)</code></h2>
+    <p style="color:#94a3b8;font-size:.875rem;margin-bottom:.75rem">
+      .NET pushes a <code>tick</code> event every 5 seconds. Last received:
+    </p>
+    <div class="output" id="tick-output">Waiting for first tick…</div>
+  </div>
+
+  <script>
+    // ── Greet ──────────────────────────────────────────────────────────────────
+    document.getElementById('btn-greet').addEventListener('click', async () => {
+      const name = document.getElementById('name-input').value || 'World';
+      const el = document.getElementById('greet-output');
+      el.className = 'output';
+      el.textContent = 'Calling .NET…';
+      try {
+        const result = await window.omni.invoke('greet', name);
+        el.textContent = result;
+        el.className = 'output ok';
+      } catch (err) {
+        el.textContent = 'Error: ' + err.message;
+        el.className = 'output err';
+      }
+    });
+
+    // ── Sysinfo ────────────────────────────────────────────────────────────────
+    document.getElementById('btn-sysinfo').addEventListener('click', async () => {
+      const el = document.getElementById('sysinfo-output');
+      el.className = 'output';
+      el.textContent = 'Calling .NET…';
+      try {
+        const info = await window.omni.invoke('sysinfo');
+        el.textContent = JSON.stringify(info, null, 2);
+        el.className = 'output ok';
+      } catch (err) {
+        el.textContent = 'Error: ' + err.message;
+        el.className = 'output err';
+      }
+    });
+
+    // ── Tick (server-push) ─────────────────────────────────────────────────────
+    window.omni.on('tick', (data) => {
+      const el = document.getElementById('tick-output');
+      el.className = 'output ok';
+      el.innerHTML = 'Last tick: <span class="tick-badge">' + data.time + '</span>';
+    });
+  </script>
+</body>
+</html>

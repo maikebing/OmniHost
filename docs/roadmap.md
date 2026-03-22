@@ -11,11 +11,12 @@ title: Roadmap
 - [x] Repository structure and docs baseline
 - [x] `OmniWebHost.Abstractions` — interfaces and models
 - [x] `OmniWebHost.Core` — builder and runner scaffolding
-- [x] `OmniWebHost.WebView2` — placeholder adapter
-- [ ] Real WebView2 runtime initialisation
-- [ ] JS Bridge wired to WebView2 events
-- [ ] Custom scheme support (local asset serving)
-- [ ] Basic sample running end-to-end
+- [x] `OmniWebHost.WebView2` — real WebView2 runtime initialisation
+- [x] JS Bridge wired to WebView2 events (`window.omni` helper injected)
+- [x] Custom scheme support (local asset serving via `app://localhost/`)
+- [x] `WinFormsRuntime` + end-to-end runnable sample on Windows
+- [ ] Window lifecycle (min/max/close events)
+- [ ] Frameless window mode
 
 ## 0.2.x — Windows Stable
 

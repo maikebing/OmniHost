@@ -4,51 +4,76 @@ title: JS Bridge
 
 # JS Bridge
 
-The JS Bridge (`IJsBridge`) provides bidirectional communication between your .NET application code and JavaScript running inside the WebView.
+The JS Bridge (`IJsBridge`) provides **bidirectional** communication between .NET and JavaScript running in the WebView.
 
-## Executing JavaScript from .NET
+## Injected Helper — `window.omni`
 
-```csharp
-var result = await adapter.JsBridge.ExecuteScriptAsync("document.title");
-Console.WriteLine(result); // e.g. "My Page"
+OmniWebHost automatically injects a lightweight bridge script into every page at document-creation time (before any page script runs). You do **not** need to add a script tag.
+
+```js
+// window.omni is always available in OmniWebHost pages
+window.omni.invoke(handler, data) → Promise<any>
+window.omni.on(eventName, callback)
 ```
+
+---
 
 ## Calling .NET from JavaScript
 
-Register a named handler on the .NET side:
+Register a named handler on the .NET side before navigation:
 
 ```csharp
 adapter.JsBridge.RegisterHandler("greet", async payload =>
 {
-    // payload is a JSON string sent from JavaScript
-    var name = System.Text.Json.JsonSerializer.Deserialize<string>(payload);
-    return System.Text.Json.JsonSerializer.Serialize($"Hello, {name}!");
+    var name = payload.Trim('"'); // payload is a JSON string
+    return $"\"Hello, {name}!\""; // return value must also be valid JSON
 });
 ```
 
-Invoke it from JavaScript (exact API depends on the adapter):
+Call it from JavaScript:
 
 ```js
-// WebView2 uses window.chrome.webview.postMessage
-window.chrome.webview.postMessage(JSON.stringify({ handler: "greet", data: "World" }));
+const greeting = await window.omni.invoke('greet', 'Alice');
+console.log(greeting); // "Hello, Alice!"
 ```
 
-## Sending Messages from .NET to JavaScript
+The call returns a `Promise` that resolves with the parsed return value.
+
+---
+
+## Sending Events from .NET to JavaScript (.NET → JS push)
 
 ```csharp
-await adapter.JsBridge.PostMessageAsync("appReady", "{\"version\":\"0.1.0\"}");
+await adapter.JsBridge.PostMessageAsync("tick", "{\"time\":\"12:00:00\"}");
 ```
 
 Subscribe in JavaScript:
 
 ```js
-window.addEventListener("message", e => {
-    const { event, payload } = JSON.parse(e.data);
-    if (event === "appReady") console.log("App version:", payload.version);
+window.omni.on('tick', (data) => {
+    console.log('Tick received:', data.time);
 });
 ```
 
-## Notes
+---
 
-- The exact JS-side API varies slightly per adapter to match each engine's native messaging mechanism.
-- A unified JavaScript SDK (`omni.js`) that normalises the API across adapters is planned for a future milestone.
+## Executing Raw JavaScript from .NET
+
+```csharp
+var title = await adapter.JsBridge.ExecuteScriptAsync("document.title");
+```
+
+---
+
+## Protocol Details
+
+The bridge uses a JSON envelope over the native `window.chrome.webview` WebView2 messaging channel.
+
+| Direction | JSON shape |
+|-----------|-----------|
+| JS → .NET invoke | `{"type":"invoke","handler":"name","id":"uuid","data":"jsonString"}` |
+| .NET → JS response | `{"type":"response","id":"uuid","result":"jsonString"}` |
+| .NET → JS event | `{"type":"event","name":"eventName","data":"jsonString"}` |
+
+Invoke calls time out after 30 seconds and reject the Promise with an error.
+
