@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniWebHost.WebView2</RootNamespace>
+    <AssemblyName>OmniWebHost.WebView2</AssemblyName>
+    <Version>0.1.0-preview.1</Version>
+    <Description>Microsoft WebView2 adapter for OmniWebHost – Windows-first WebView2 browser adapter.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniWebHost.Abstractions\OmniWebHost.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
