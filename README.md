@@ -44,6 +44,7 @@ The first preview ships the **Windows / WebView2** path:
 - `OmniWebHost.Core` — builder + app runner
 - `OmniWebHost` — top-level `OmniApp` entry point
 - `OmniWebHost.Hosting` — `IHostBuilder` extensions
+- `OmniWebHost.Windows` — Windows runtime + raw Win32 host window
 - `OmniWebHost.WebView2` — WebView2 adapter placeholder
 
 CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later milestones — see [ROADMAP.md](ROADMAP.md).
@@ -60,6 +61,7 @@ CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later mile
 
 ```csharp
 using OmniWebHost;
+using OmniWebHost.Windows;
 using OmniWebHost.WebView2;
 
 var app = OmniApp.CreateBuilder(args)

@@ -1,15 +1,15 @@
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
-using OmniWebHost.WebView2.Win32;
+using OmniWebHost.Windows.Win32;
 
-namespace OmniWebHost.WebView2;
+namespace OmniWebHost.Windows;
 
 /// <summary>
-/// AOT-compatible raw Win32 window that hosts a <see cref="WebView2Adapter"/>.
+/// AOT-compatible raw Win32 window that hosts an <see cref="IWebViewAdapter"/>.
 /// No WinForms or WPF dependency — window creation and the message loop are
 /// implemented entirely via P/Invoke.
 /// </summary>
-internal sealed class OmniHostWindow
+internal sealed class Win32HostWindow : IHostWindow
 {
     // ── Class registration ────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ internal sealed class OmniHostWindow
 
     /// <summary>
     /// Static WndProc delegate stored in a field to prevent GC collection.
-    /// Used for all <see cref="OmniHostWindow"/> instances.
+    /// Used for all <see cref="Win32HostWindow"/> instances.
     /// </summary>
     private static readonly NativeMethods.WndProcDelegate _sharedWndProc = StaticWndProc;
 
@@ -33,15 +33,23 @@ internal sealed class OmniHostWindow
     private IntPtr                      _hwnd;
     private Win32SynchronizationContext? _syncContext;
     private Exception?                  _deferredError;
+    private int                         _surfaceWidth;
+    private int                         _surfaceHeight;
 
     // ── Construction ──────────────────────────────────────────────────────────
 
-    internal OmniHostWindow(OmniWebHostOptions options, IWebViewAdapter adapter, IDesktopApp? desktopApp)
+    internal Win32HostWindow(OmniWebHostOptions options, IWebViewAdapter adapter, IDesktopApp? desktopApp)
     {
         _options    = options;
         _adapter    = adapter;
         _desktopApp = desktopApp;
+        _surfaceWidth = options.Width;
+        _surfaceHeight = options.Height;
     }
+
+    /// <inheritdoc/>
+    public HostSurfaceDescriptor Surface
+        => new(HostSurfaceKind.Hwnd, _hwnd, _surfaceWidth, _surfaceHeight);
 
     // ── Public entry point ────────────────────────────────────────────────────
 
@@ -49,7 +57,7 @@ internal sealed class OmniHostWindow
     /// Creates the native window, runs the Win32 message loop, and returns only
     /// after the window is closed.  Throws if async WebView2 initialization failed.
     /// </summary>
-    internal void Run()
+    public void Run()
     {
         // Best-effort per-monitor DPI awareness (requires shcore.dll on Win 8.1+).
         TrySetDpiAwareness();
@@ -162,7 +170,7 @@ internal sealed class OmniHostWindow
         // lParam is a pointer to CREATESTRUCTW. Its first field (offset 0) is
         // lpCreateParams — the value we passed as the last argument to CreateWindowExW.
         // We store that GCHandle pointer in GWLP_USERDATA so every subsequent message
-        // can reach the OmniHostWindow instance.
+        // can reach the Win32HostWindow instance.
         if (msg == NativeMethods.WM_NCCREATE)
         {
             // Marshal.ReadIntPtr(lParam, 0) reads CREATESTRUCTW.lpCreateParams,
@@ -174,7 +182,7 @@ internal sealed class OmniHostWindow
         }
 
         var userData = NativeMethods.GetWindowLongPtrW(hwnd, NativeMethods.GWLP_USERDATA);
-        if (userData != IntPtr.Zero && GCHandle.FromIntPtr(userData).Target is OmniHostWindow win)
+        if (userData != IntPtr.Zero && GCHandle.FromIntPtr(userData).Target is Win32HostWindow win)
             return win.InstanceWndProc(hwnd, msg, wParam, lParam);
 
         return NativeMethods.DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -246,10 +254,11 @@ internal sealed class OmniHostWindow
             if (!NativeMethods.GetClientRect(hwnd, out var rc))
                 rc = new NativeMethods.RECT { right = _options.Width, bottom = _options.Height };
 
-            await _adapter.InitializeAsync(hwnd, _options);
+            _surfaceWidth = rc.right - rc.left;
+            _surfaceHeight = rc.bottom - rc.top;
 
-            if (_adapter is WebView2Adapter wv2)
-                wv2.Resize(rc.right - rc.left, rc.bottom - rc.top);
+            await _adapter.InitializeAsync(Surface, _options);
+            _adapter.Resize(_surfaceWidth, _surfaceHeight);
 
             RegisterWindowBridgeHandlers();
 
@@ -263,13 +272,11 @@ internal sealed class OmniHostWindow
             _deferredError = ex;
 
             var text =
-                $"OmniWebHost failed to initialize WebView2:\n\n{ex.Message}\n\n" +
-                "Make sure the Microsoft Edge WebView2 Runtime is installed.\n" +
-                "Download: https://developer.microsoft.com/microsoft-edge/webview2/";
+                $"OmniWebHost failed to initialize the browser adapter '{_adapter.AdapterId}':\n\n{ex.Message}";
 
             NativeMethods.MessageBoxW(
                 hwnd, text,
-                "OmniWebHost – Initialization Error",
+                "OmniWebHost - Initialization Error",
                 NativeMethods.MB_OK | NativeMethods.MB_ICONERROR);
 
             NativeMethods.DestroyWindow(hwnd);
@@ -426,8 +433,10 @@ internal sealed class OmniHostWindow
         int w = (int)((uint)lParam & 0xFFFFu);
         int h = (int)((uint)lParam >> 16);
 
-        if (_adapter is WebView2Adapter wv2)
-            wv2.Resize(w, h);
+        _surfaceWidth = w;
+        _surfaceHeight = h;
+
+        _adapter.Resize(w, h);
     }
 
     private async void OnClose(IntPtr hwnd)

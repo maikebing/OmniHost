@@ -27,10 +27,18 @@ public sealed class WebView2Adapter : IWebViewAdapter
     // ── IWebViewAdapter ──────────────────────────────────────────────────────
 
     public async Task InitializeAsync(
-        nint hostHandle,
+        HostSurfaceDescriptor surface,
         OmniWebHostOptions options,
         CancellationToken cancellationToken = default)
     {
+        if (surface.Kind != HostSurfaceKind.Hwnd)
+            throw new NotSupportedException(
+                $"WebView2Adapter only supports {HostSurfaceKind.Hwnd} host surfaces.");
+
+        if (!surface.IsCreated)
+            throw new InvalidOperationException(
+                "The supplied host surface has not been created yet.");
+
         var userDataFolder = options.UserDataFolder
             ?? Path.Combine(Path.GetTempPath(), "OmniWebHost", SanitizeFolderName(options.Title));
 
@@ -40,7 +48,7 @@ public sealed class WebView2Adapter : IWebViewAdapter
             userDataFolder: userDataFolder,
             options: environmentOptions);
 
-        _controller = await _environment.CreateCoreWebView2ControllerAsync(hostHandle);
+        _controller = await _environment.CreateCoreWebView2ControllerAsync(surface.Handle);
         _controller.IsVisible = true;
 
         var core = _controller.CoreWebView2;
@@ -73,6 +81,15 @@ public sealed class WebView2Adapter : IWebViewAdapter
         await InjectWindowChromeSupportAsync(core, options);
         await InjectHostCssAsync(core, options);
     }
+
+    public Task InitializeAsync(
+        nint hostHandle,
+        OmniWebHostOptions options,
+        CancellationToken cancellationToken = default)
+        => InitializeAsync(
+            new HostSurfaceDescriptor(HostSurfaceKind.Hwnd, hostHandle),
+            options,
+            cancellationToken);
 
     public Task NavigateAsync(string url, CancellationToken cancellationToken = default)
     {

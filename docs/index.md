@@ -4,6 +4,9 @@ title: OmniWebHost
 
 # OmniWebHost
 
+> Product short name: `Omni`  
+> Planned technical family after the hosting refactor: `OmniHost`
+
 **A cross-platform .NET desktop WebView hosting framework.**
 
 OmniWebHost lets you build desktop applications powered by a web front-end, using whichever browser engine is available on the host platform — WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux, or CEF anywhere.

@@ -9,7 +9,7 @@
     <RootNamespace>OmniWebHost.WebView2</RootNamespace>
     <AssemblyName>OmniWebHost.WebView2</AssemblyName>
     <Version>0.1.0-preview.2</Version>
-    <Description>Microsoft WebView2 adapter for OmniWebHost — AOT-compatible, raw Win32 window host.</Description>
+    <Description>Microsoft WebView2 browser adapter for OmniWebHost.</Description>
     <NoWarn>MSB3277</NoWarn>
   </PropertyGroup>
 
@@ -22,5 +22,4 @@
   </ItemGroup>
 
 </Project>
-
 

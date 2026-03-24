@@ -21,6 +21,15 @@ title: Roadmap
 ## 0.2.x — Windows Stable
 
 - Multi-window support
+- Runtime / HostWindow refactor:
+  - introduced `IHostWindow`, `IHostWindowFactory`, and `HostSurfaceDescriptor`
+  - renamed `OmniHostWindow` to `Win32HostWindow`
+  - moved Win32 hosting out of `OmniWebHost.WebView2` into `OmniWebHost.Windows`
+  - kept `Win32Runtime` as the simple public entry point during the transition
+- Naming strategy:
+  - product short name: `Omni`
+  - planned technical family after refactor: `OmniHost.*`
+  - defer the full rename until the new hosting seams are stable
 
 ## 0.3.x — macOS
 
@@ -34,4 +43,5 @@ title: Roadmap
 
 - `OmniWebHost.Cef` adapter (CefSharp / Chromely)
 
-See [ROADMAP.md](../ROADMAP.md) in the repository root for the full plan.
+See [ROADMAP.md](../ROADMAP.md) in the repository root for the full staged plan,
+including the refactor sketch and proposed package layout.

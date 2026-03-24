@@ -19,8 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OmniWebHost\OmniWebHost.csproj" />
+    <ProjectReference Include="..\..\src\OmniWebHost.Windows\OmniWebHost.Windows.csproj" />
     <ProjectReference Include="..\..\src\OmniWebHost.WebView2\OmniWebHost.WebView2.csproj" />
   </ItemGroup>
 
 </Project>
-

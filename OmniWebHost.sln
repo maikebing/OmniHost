@@ -12,6 +12,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OmniWebHost.Hosting", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OmniWebHost.WebView2", "src\OmniWebHost.WebView2\OmniWebHost.WebView2.csproj", "{E5F6A1B2-C3D4-4E5F-C06B-7C8D9E0F1A2B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OmniWebHost.Windows", "src\OmniWebHost.Windows\OmniWebHost.Windows.csproj", "{1A2B3C4D-5E6F-4789-8A9B-0C1D2E3F4A5B}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OmniWebHost.Sample.Basic", "samples\OmniWebHost.Sample.Basic\OmniWebHost.Sample.Basic.csproj", "{F6A1B2C3-D4E5-4F6A-D17C-8D9E0F1A2B3C}"
 EndProject
 Global
@@ -40,6 +42,10 @@ Global
 		{E5F6A1B2-C3D4-4E5F-C06B-7C8D9E0F1A2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5F6A1B2-C3D4-4E5F-C06B-7C8D9E0F1A2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5F6A1B2-C3D4-4E5F-C06B-7C8D9E0F1A2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A2B3C4D-5E6F-4789-8A9B-0C1D2E3F4A5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A2B3C4D-5E6F-4789-8A9B-0C1D2E3F4A5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A2B3C4D-5E6F-4789-8A9B-0C1D2E3F4A5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A2B3C4D-5E6F-4789-8A9B-0C1D2E3F4A5B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F6A1B2C3-D4E5-4F6A-D17C-8D9E0F1A2B3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6A1B2C3-D4E5-4F6A-D17C-8D9E0F1A2B3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6A1B2C3-D4E5-4F6A-D17C-8D9E0F1A2B3C}.Release|Any CPU.ActiveCfg = Release|Any CPU

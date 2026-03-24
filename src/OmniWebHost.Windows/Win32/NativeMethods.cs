@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 
-namespace OmniWebHost.WebView2.Win32;
+namespace OmniWebHost.Windows.Win32;
 
 /// <summary>
-/// Raw Win32 P/Invoke declarations used by <see cref="OmniHostWindow"/>.
+/// Raw Win32 P/Invoke declarations used by <see cref="Win32HostWindow"/>.
 /// All imports use ExactSpelling + CharSet.Unicode for AOT safety.
 /// </summary>
 internal static class NativeMethods

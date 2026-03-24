@@ -13,6 +13,7 @@ title: Getting Started
 
 ```bash
 dotnet add package OmniWebHost
+dotnet add package OmniWebHost.Windows
 dotnet add package OmniWebHost.WebView2
 ```
 
@@ -22,6 +23,7 @@ Create a console project targeting `net8.0-windows`:
 
 ```csharp
 using OmniWebHost;
+using OmniWebHost.Windows;
 using OmniWebHost.WebView2;
 
 var app = OmniApp.CreateBuilder(args)

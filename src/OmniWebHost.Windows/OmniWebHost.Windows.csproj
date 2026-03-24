@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniWebHost.Windows</RootNamespace>
+    <AssemblyName>OmniWebHost.Windows</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>Windows runtime and raw Win32 host-window implementation for OmniWebHost.</Description>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniWebHost.Abstractions\OmniWebHost.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

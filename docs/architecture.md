@@ -19,8 +19,9 @@ OmniWebHost is structured as a set of layered packages with clear boundaries:
 ├───────────────┴──────────────────────────────┤
 │          OmniWebHost.Abstractions            │
 │  IWebViewAdapter  IWebViewAdapterFactory     │
-│  IJsBridge        IDesktopApp               │
-│  BrowserCapabilities  OmniWebHostOptions    │
+│  IHostWindow      IHostWindowFactory         │
+│  IJsBridge        IDesktopApp                │
+│  BrowserCapabilities  OmniWebHostOptions     │
 ├──────────────┬───────────────┬──────────────┤
 │ WebView2     │  CEF (future) │  WKWebView   │
 │ Adapter      │               │  (future)    │
@@ -35,17 +36,26 @@ OmniWebHost is structured as a set of layered packages with clear boundaries:
 | `OmniWebHost.Core` | Builder pattern, `OmniWebHostApp` runner, null implementations. |
 | `OmniWebHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
 | `OmniWebHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
+| `OmniWebHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
 | `OmniWebHost.WebView2` | Microsoft WebView2 adapter (Windows). |
 
 ## Key Interfaces
 
 ### `IWebViewAdapter`
 Represents a browser engine instance.  
-Responsibilities: initialise the WebView control, navigate, expose the JS bridge.
+Responsibilities: initialise the WebView control against a typed host surface,
+navigate, expose the JS bridge.
 
 ### `IWebViewAdapterFactory`
 Creates `IWebViewAdapter` instances and reports availability.  
 Register one per supported engine via DI or pass to the builder directly.
+
+### `IHostWindow`
+Represents a concrete native host window and the browser attachment surface it exposes.
+
+### `IHostWindowFactory`
+Creates platform-specific host windows so a runtime can keep its thread/event-loop
+responsibility separate from the actual native window implementation.
 
 ### `IJsBridge`
 Bidirectional channel between .NET and JavaScript running in the WebView.
@@ -68,7 +78,8 @@ OmniApp.CreateBuilder(args)
     .RunAsync()
       → create host window
       → IWebViewAdapterFactory.Create()
-      → IWebViewAdapter.InitializeAsync(hwnd, options)
+      → IHostWindowFactory.Create(...)
+      → IWebViewAdapter.InitializeAsync(surface, options)
       → IWebViewAdapter.NavigateAsync(options.StartUrl)
       → run message loop
 ```

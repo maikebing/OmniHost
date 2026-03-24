@@ -1,6 +1,6 @@
 using System.Runtime.ExceptionServices;
 
-namespace OmniWebHost.WebView2;
+namespace OmniWebHost.Windows;
 
 /// <summary>
 /// AOT-compatible <see cref="IDesktopRuntime"/> that creates a raw Win32 window
@@ -13,6 +13,24 @@ namespace OmniWebHost.WebView2;
 /// </remarks>
 public sealed class Win32Runtime : IDesktopRuntime
 {
+    private readonly IHostWindowFactory _windowFactory;
+
+    /// <summary>
+    /// Creates a Win32 runtime using the default raw Win32 host window implementation.
+    /// </summary>
+    public Win32Runtime()
+        : this(new Win32HostWindowFactory())
+    {
+    }
+
+    /// <summary>
+    /// Creates a Win32 runtime with a custom host-window factory.
+    /// </summary>
+    public Win32Runtime(IHostWindowFactory windowFactory)
+    {
+        _windowFactory = windowFactory ?? throw new ArgumentNullException(nameof(windowFactory));
+    }
+
     /// <inheritdoc/>
     public void Run(
         OmniWebHostOptions options,
@@ -26,7 +44,7 @@ public sealed class Win32Runtime : IDesktopRuntime
             try
             {
                 var adapter = adapterFactory.Create();
-                var window  = new OmniHostWindow(options, adapter, desktopApp);
+                var window  = _windowFactory.Create(options, adapter, desktopApp);
                 window.Run();
             }
             catch (Exception ex)

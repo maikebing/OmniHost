@@ -1,4 +1,5 @@
 using OmniWebHost;
+using OmniWebHost.Windows;
 using OmniWebHost.WebView2;
 
 // ── Configure and build the application ──────────────────────────────────────

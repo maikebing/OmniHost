@@ -49,11 +49,15 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
        public string AdapterId => "my-engine";
        public BrowserCapabilities Capabilities => new() { EngineName = "MyEngine", ... };
        public IJsBridge JsBridge => _bridge;
-       public Task InitializeAsync(nint hostHandle, OmniWebHostOptions options, CancellationToken ct = default) { ... }
+       public Task InitializeAsync(HostSurfaceDescriptor surface, OmniWebHostOptions options, CancellationToken ct = default) { ... }
        public Task NavigateAsync(string url, CancellationToken ct = default) { ... }
        public ValueTask DisposeAsync() { ... }
    }
    ```
+
+`HostSurfaceDescriptor` is the forward-looking API because not every engine will
+always attach to a plain `HWND`. A legacy raw-handle overload still exists for
+simple adapters during the transition.
 
 ## Capability Detection
 

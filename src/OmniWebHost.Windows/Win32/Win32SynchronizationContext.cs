@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using OmniWebHost.WebView2.Win32;
+using OmniWebHost.Windows.Win32;
 
-namespace OmniWebHost.WebView2;
+namespace OmniWebHost.Windows;
 
 /// <summary>
 /// A <see cref="SynchronizationContext"/> that posts async continuations back to the
