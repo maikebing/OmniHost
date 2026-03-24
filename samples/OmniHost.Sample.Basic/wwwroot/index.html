@@ -244,6 +244,21 @@
     </div>
 
     <div class="card">
+      <h2>Window Manager - <code>IOmniWindowManager</code></h2>
+      <p style="color:#94a3b8;font-size:.875rem;margin-bottom:.75rem">
+        The main window can open an inspector window on demand, close windows by id,
+        and inspect the current runtime window set.
+      </p>
+      <div class="row">
+        <button id="btn-open-inspector">Open Inspector</button>
+        <button id="btn-close-secondary">Close Secondary</button>
+        <button id="btn-close-inspector">Close Inspector</button>
+        <button id="btn-list-windows">Refresh Window List</button>
+      </div>
+      <div class="output" id="window-manager-output">Window manager activity will appear here...</div>
+    </div>
+
+    <div class="card">
       <h2>JS to .NET Bridge - <code>omni.invoke("greet", name)</code></h2>
       <div class="row">
         <input type="text" id="name-input" placeholder="Your name" value="World" />
@@ -294,6 +309,30 @@
     document.getElementById('titlebar-close').addEventListener('click', () =>
       omni.window.close());
 
+    async function invokeWindowManager(handler, payload) {
+      const output = document.getElementById('window-manager-output');
+      output.className = 'output';
+      output.textContent = 'Calling .NET window manager...';
+
+      try {
+        const result = await omni.invoke(handler, payload);
+        output.textContent = JSON.stringify(result, null, 2);
+        output.className = 'output ok';
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+        output.className = 'output err';
+      }
+    }
+
+    document.getElementById('btn-open-inspector').addEventListener('click', () =>
+      invokeWindowManager('window.openToolWindow'));
+    document.getElementById('btn-close-secondary').addEventListener('click', () =>
+      invokeWindowManager('window.closeById', 'secondary'));
+    document.getElementById('btn-close-inspector').addEventListener('click', () =>
+      invokeWindowManager('window.closeById', 'inspector'));
+    document.getElementById('btn-list-windows').addEventListener('click', () =>
+      invokeWindowManager('windows.list'));
+
     document.getElementById('btn-greet').addEventListener('click', async () => {
       const name = document.getElementById('name-input').value || 'World';
       const el = document.getElementById('greet-output');
@@ -326,7 +365,8 @@
     omni.on('tick', (data) => {
       const el = document.getElementById('tick-output');
       el.className = 'output ok';
-      el.innerHTML = 'Last tick: <span class="tick-badge">' + data.time + '</span>';
+      el.innerHTML = 'Last tick from <span class="tick-badge">' + data.windowId +
+        '</span> at <span class="tick-badge">' + data.time + '</span>';
     });
 
     const windowEventsEl = document.getElementById('window-events-output');

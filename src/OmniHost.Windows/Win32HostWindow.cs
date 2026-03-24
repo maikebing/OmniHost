@@ -28,9 +28,10 @@ internal sealed class Win32HostWindow : IHostWindow
 
     // ── Instance state ────────────────────────────────────────────────────────
 
+    private readonly OmniWindowContext _windowContext;
     private readonly OmniHostOptions _options;
-    private readonly IWebViewAdapter    _adapter;
-    private readonly IDesktopApp?       _desktopApp;
+    private readonly IWebViewAdapter _adapter;
+    private readonly IDesktopApp? _desktopApp;
     private readonly IWin32WindowFrameStrategy _frameStrategy;
 
     private IntPtr                      _hwnd;
@@ -45,17 +46,17 @@ internal sealed class Win32HostWindow : IHostWindow
     // ── Construction ──────────────────────────────────────────────────────────
 
     internal Win32HostWindow(
-        OmniHostOptions options,
-        IWebViewAdapter adapter,
+        OmniWindowContext windowContext,
         IDesktopApp? desktopApp,
         IWin32WindowFrameStrategy frameStrategy)
     {
-        _options    = options;
-        _adapter    = adapter;
+        _windowContext = windowContext ?? throw new ArgumentNullException(nameof(windowContext));
+        _options = windowContext.Options;
+        _adapter = windowContext.Adapter;
         _desktopApp = desktopApp;
         _frameStrategy = frameStrategy ?? throw new ArgumentNullException(nameof(frameStrategy));
-        _surfaceWidth = options.Width;
-        _surfaceHeight = options.Height;
+        _surfaceWidth = _options.Width;
+        _surfaceHeight = _options.Height;
     }
 
     /// <inheritdoc/>
@@ -99,6 +100,15 @@ internal sealed class Win32HostWindow : IHostWindow
         // Re-throw any exception that was captured during async initialisation.
         if (_deferredError is not null)
             ExceptionDispatchInfo.Capture(_deferredError).Throw();
+    }
+
+    /// <inheritdoc/>
+    public void RequestClose()
+    {
+        if (_hwnd == IntPtr.Zero)
+            return;
+
+        NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
     }
 
     // ── Window class registration ─────────────────────────────────────────────
@@ -251,8 +261,16 @@ internal sealed class Win32HostWindow : IHostWindow
             RegisterWindowBridgeHandlers();
             await PublishWindowStateChangedIfNeededAsync("initialized");
 
-            if (_desktopApp is not null)
+            if (_desktopApp is IWindowAwareDesktopApp windowAwareDesktopApp)
+            {
+                await windowAwareDesktopApp.OnWindowStartAsync(
+                    _windowContext,
+                    _windowLifetime.Token);
+            }
+            else if (_desktopApp is not null)
+            {
                 await _desktopApp.OnStartAsync(_adapter, _windowLifetime.Token);
+            }
 
             await _adapter.NavigateAsync(_options.StartUrl);
         }
@@ -391,8 +409,16 @@ internal sealed class Win32HostWindow : IHostWindow
                 reason = "wm_close",
             });
 
-            if (_desktopApp is not null)
+            if (_desktopApp is IWindowAwareDesktopApp windowAwareDesktopApp)
+            {
+                await windowAwareDesktopApp.OnWindowClosingAsync(
+                    _windowContext,
+                    _windowLifetime.Token);
+            }
+            else if (_desktopApp is not null)
+            {
                 await _desktopApp.OnClosingAsync();
+            }
         }
         catch { /* ignore errors during shutdown */ }
 

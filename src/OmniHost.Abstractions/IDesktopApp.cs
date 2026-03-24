@@ -4,6 +4,8 @@ namespace OmniHost;
 /// Represents the top-level desktop application managed by OmniHost.
 /// Implement this interface to customise application lifecycle and window behaviour.
 /// In multi-window runs, these callbacks are invoked once per created host window.
+/// Implement <see cref="IWindowAwareDesktopApp"/> instead when you need window ids,
+/// window-manager access, or other per-window context.
 /// </summary>
 public interface IDesktopApp
 {

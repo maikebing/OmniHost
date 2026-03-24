@@ -96,15 +96,16 @@
 <body>
   <div class="shell">
     <section class="hero">
-      <h1>Secondary Startup Window</h1>
+      <h1 id="window-title">Secondary Startup Window</h1>
       <p>
-        This window is declared through <code>AddWindow(...)</code> and uses its own title,
-        size, and startup page while still sharing the same adapter factory and desktop app.
+        This page is used by both the startup secondary window and dynamically opened
+        inspector windows, while still sharing the same adapter factory and desktop app.
       </p>
     </section>
 
     <section class="card">
       <button id="btn-sysinfo">Load Shared System Info</button>
+      <button id="btn-close-self">Close This Window</button>
       <div class="output" id="sysinfo-output">Waiting for shared .NET data...</div>
     </section>
 
@@ -120,6 +121,10 @@
   </div>
 
   <script>
+    const windowKind = new URLSearchParams(window.location.search).get('window') || 'secondary';
+    document.getElementById('window-title').textContent =
+      windowKind === 'inspector' ? 'Inspector Tool Window' : 'Secondary Startup Window';
+
     document.getElementById('btn-sysinfo').addEventListener('click', async () => {
       const output = document.getElementById('sysinfo-output');
       output.textContent = 'Calling shared .NET desktop app...';
@@ -132,9 +137,13 @@
       }
     });
 
+    document.getElementById('btn-close-self').addEventListener('click', () => {
+      omni.window.close();
+    });
+
     omni.on('tick', (data) => {
       document.getElementById('tick-output').textContent =
-        'Tick received at ' + data.time;
+        'Tick received for ' + data.windowId + ' at ' + data.time;
     });
 
     const eventList = document.getElementById('event-list');

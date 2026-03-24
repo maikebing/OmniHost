@@ -1,4 +1,4 @@
-namespace OmniHost.Core;
+namespace OmniHost;
 
 /// <summary>
 /// Immutable snapshot of a currently tracked host window.

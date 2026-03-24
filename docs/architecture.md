@@ -69,11 +69,23 @@ Bidirectional channel between .NET and JavaScript running in the WebView.
 Optional lifecycle callbacks (`OnStartAsync`, `OnClosingAsync`) for the host application.
 These callbacks run once per created host window.
 
+### `IWindowAwareDesktopApp`
+Optional context-aware desktop-app contract that receives `OmniWindowContext`
+for each window and can coordinate dynamic multi-window behaviour.
+
 ### `IMultiWindowDesktopRuntime`
 Optional runtime extension used when the builder declares additional startup windows.
 
 ### `OmniWindowDefinition`
 Public startup-window descriptor used by `OmniHostBuilder.AddWindow(...)`.
+
+### `OmniWindowContext`
+Per-window context containing the window id, startup options snapshot, browser adapter,
+and current window manager.
+
+### `IOmniWindowManager`
+Runtime window-management API for enumerating open windows, opening additional windows,
+and requesting close on a specific window.
 
 ### `BrowserCapabilities`
 Describes what a given adapter can do (DevTools, custom schemes, JS bridge, host-surface support, …).

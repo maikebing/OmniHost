@@ -68,6 +68,7 @@ Optional host-level behaviour can be configured through `OmniHostOptions`, inclu
 - `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
 - `ScrollBarCustomCss = "..."`
 - `AddWindow("secondary", options => { ... })` for extra startup windows on runtimes that support `IMultiWindowDesktopRuntime`
+- `IWindowAwareDesktopApp` + `IOmniWindowManager` for runtime window operations such as dynamic open/close
 
 Add `wwwroot/index.html`:
 
@@ -98,6 +99,7 @@ omni.on('window.stateChanged', (data) => {
 ```
 
 The `CancellationToken` passed to `OnStartAsync(...)` is tied to the lifetime of that specific host window, which is especially useful for per-window background tasks in multi-window apps.
+When you need the window id, the runtime window manager, or per-window option snapshots, implement `IWindowAwareDesktopApp` and use `OnWindowStartAsync(OmniWindowContext, ...)`.
 
 ## Win32Runtime and STA
 

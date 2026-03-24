@@ -14,4 +14,9 @@ public interface IHostWindow
     /// Creates the native window, runs its event loop, and blocks until it closes.
     /// </summary>
     void Run();
+
+    /// <summary>
+    /// Requests that the host window begin its normal close flow.
+    /// </summary>
+    void RequestClose();
 }

@@ -20,12 +20,10 @@ internal sealed class Win32HostWindowFactory : IHostWindowFactory
     }
 
     public IHostWindow Create(
-        OmniHostOptions options,
-        IWebViewAdapter adapter,
+        OmniWindowContext windowContext,
         IDesktopApp? desktopApp)
         => new Win32HostWindow(
-            options,
-            adapter,
+            windowContext,
             desktopApp,
-            _frameStrategyFactory.Create(options.WindowStyle));
+            _frameStrategyFactory.Create(windowContext.Options.WindowStyle));
 }

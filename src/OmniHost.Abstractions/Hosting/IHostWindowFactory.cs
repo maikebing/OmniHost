@@ -13,8 +13,5 @@ public interface IHostWindowFactory
     /// <summary>
     /// Creates a host window that will own the browser attachment surface.
     /// </summary>
-    IHostWindow Create(
-        OmniHostOptions options,
-        IWebViewAdapter adapter,
-        IDesktopApp? desktopApp);
+    IHostWindow Create(OmniWindowContext windowContext, IDesktopApp? desktopApp);
 }

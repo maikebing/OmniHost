@@ -18,7 +18,7 @@
 - [x] `OmniWindowStyle.Frameless` + window-control JS bridge (`minimize`, `maximize`, `close`, `startDrag`)
 - [x] Window lifecycle management (state/close events via OS hook and JS bridge)
 - [x] Frameless drag-region HTML attribute (`omni-drag`)
-- [x] Multi-window support (builder-defined startup windows)
+- [x] Multi-window support (startup windows + runtime window manager)
 - [ ] Splash screen helper
 
 ## Runtime / HostWindow Refactor Track
@@ -159,6 +159,7 @@ src/
 - [x] Add internal window definitions and tracked-window snapshots so future main/auxiliary windows can share one coordination pipeline.
 - [x] Clone `OmniHostOptions` per tracked window so future multi-window instances do not share one mutable options object.
 - [x] Promote startup multi-window configuration to the public builder/runtime API.
+- [x] Expose runtime window-manager operations and per-window context to desktop apps.
 
 #### Phase 5 — Bring the pattern to other platforms
 

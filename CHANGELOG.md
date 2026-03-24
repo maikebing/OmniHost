@@ -17,8 +17,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `OmniHostBuilder.AddWindow(...)`
   - `IMultiWindowDesktopRuntime`
   - `OmniWindowDefinition`
+- Context-aware window management via:
+  - `IWindowAwareDesktopApp`
+  - `OmniWindowContext`
+  - `IOmniWindowManager`
 - The basic sample now shows a live window lifecycle event stream.
-- The basic sample now launches a secondary startup window.
+- The basic sample now launches a secondary startup window and can open/close an inspector window at runtime.
 
 ### Changed - breaking
 

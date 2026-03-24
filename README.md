@@ -83,6 +83,7 @@ await app.RunAsync();
 `OmniHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
 For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
 You can also declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
+For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
 
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 
@@ -110,6 +111,35 @@ var app = OmniApp.CreateBuilder(args)
     .UseAdapter(new WebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
     .Build();
+```
+
+Context-aware window management example:
+
+```csharp
+sealed class MyApp : IWindowAwareDesktopApp
+{
+    public Task OnStartAsync(IWebViewAdapter adapter, CancellationToken ct = default) => Task.CompletedTask;
+    public Task OnClosingAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task OnWindowStartAsync(OmniWindowContext window, CancellationToken ct = default)
+    {
+        if (window.IsMainWindow)
+        {
+            window.WindowManager.OpenWindow(new OmniWindowDefinition("tool", new OmniHostOptions
+            {
+                Title = "Tool",
+                StartUrl = "app://localhost/tool.html",
+                CustomScheme = "app",
+                ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
+            }));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task OnWindowClosingAsync(OmniWindowContext window, CancellationToken ct = default)
+        => Task.CompletedTask;
+}
 ```
 
 ---

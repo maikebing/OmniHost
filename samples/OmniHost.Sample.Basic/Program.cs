@@ -19,7 +19,7 @@ var app = OmniApp.CreateBuilder(args)
     .AddWindow("secondary", options =>
     {
         options.Title = "OmniHost Secondary Window";
-        options.StartUrl = "app://localhost/secondary.html";
+        options.StartUrl = "app://localhost/secondary.html?window=secondary";
         options.Width = 520;
         options.Height = 440;
         options.WindowStyle = OmniWindowStyle.Normal;
@@ -31,29 +31,87 @@ var app = OmniApp.CreateBuilder(args)
 
 await app.RunAsync();
 
-sealed class SampleApp : IDesktopApp
+sealed class SampleApp : IWindowAwareDesktopApp
 {
     public Task OnStartAsync(IWebViewAdapter adapter, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public Task OnClosingAsync(CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public Task OnWindowStartAsync(OmniWindowContext window, CancellationToken cancellationToken = default)
     {
-        adapter.JsBridge.RegisterHandler("greet", payload =>
+        window.Adapter.JsBridge.RegisterHandler("greet", payload =>
         {
             var name = payload.Trim('"');
             return Task.FromResult(
-                $"\"Hello, {name}! Greetings from .NET {Environment.Version} on {Environment.MachineName}.\"");
+                $"\"Hello, {name}! This is window '{window.WindowId}' on {Environment.MachineName}.\"");
         });
 
-        adapter.JsBridge.RegisterHandler("sysinfo", _ =>
+        window.Adapter.JsBridge.RegisterHandler("sysinfo", _ =>
         {
             var payload = JsonSerializer.Serialize(new
             {
+                windowId = window.WindowId,
+                isMain = window.IsMainWindow,
                 os = Environment.OSVersion.ToString(),
                 dotnet = Environment.Version.ToString(),
                 machine = Environment.MachineName,
+                openWindows = window.WindowManager.GetOpenWindowIds(),
                 time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             });
 
             return Task.FromResult(payload);
         });
+
+        window.Adapter.JsBridge.RegisterHandler("windows.list", _ =>
+        {
+            var payload = JsonSerializer.Serialize(
+                window.WindowManager.GetOpenWindows().Select(snapshot => new
+                {
+                    id = snapshot.WindowId,
+                    isMain = snapshot.IsMainWindow,
+                    title = snapshot.Options.Title,
+                    startUrl = snapshot.Options.StartUrl,
+                }));
+
+            return Task.FromResult(payload);
+        });
+
+        if (window.IsMainWindow)
+        {
+            window.Adapter.JsBridge.RegisterHandler("window.openToolWindow", _ =>
+            {
+                if (window.WindowManager.GetOpenWindowIds().Contains("inspector"))
+                {
+                    return Task.FromResult(JsonSerializer.Serialize(new
+                    {
+                        opened = false,
+                        message = "Inspector window is already open."
+                    }));
+                }
+
+                window.WindowManager.OpenWindow(CreateInspectorWindow());
+
+                return Task.FromResult(JsonSerializer.Serialize(new
+                {
+                    opened = true,
+                    windowId = "inspector"
+                }));
+            });
+
+            window.Adapter.JsBridge.RegisterHandler("window.closeById", payload =>
+            {
+                var windowId = payload.Trim('"');
+                var closed = window.WindowManager.TryCloseWindow(windowId);
+
+                return Task.FromResult(JsonSerializer.Serialize(new
+                {
+                    windowId,
+                    closed
+                }));
+            });
+        }
 
         _ = Task.Run(async () =>
         {
@@ -65,10 +123,11 @@ sealed class SampleApp : IDesktopApp
 
                     var payload = JsonSerializer.Serialize(new
                     {
+                        windowId = window.WindowId,
                         time = DateTime.Now.ToString("HH:mm:ss")
                     });
 
-                    await adapter.JsBridge.PostMessageAsync("tick", payload).ConfigureAwait(false);
+                    await window.Adapter.JsBridge.PostMessageAsync("tick", payload).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -79,5 +138,24 @@ sealed class SampleApp : IDesktopApp
         return Task.CompletedTask;
     }
 
-    public Task OnClosingAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task OnWindowClosingAsync(OmniWindowContext window, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    private static OmniWindowDefinition CreateInspectorWindow()
+    {
+        var options = new OmniHostOptions
+        {
+            Title = "OmniHost Inspector Window",
+            CustomScheme = "app",
+            ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot"),
+            StartUrl = "app://localhost/secondary.html?window=inspector",
+            Width = 500,
+            Height = 380,
+            EnableDevTools = true,
+            WindowStyle = OmniWindowStyle.Normal,
+            ScrollBarMode = OmniScrollBarMode.Auto,
+        };
+
+        return new OmniWindowDefinition("inspector", options);
+    }
 }
