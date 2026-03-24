@@ -12,9 +12,9 @@ title: Getting Started
 ## Installation
 
 ```bash
-dotnet add package OmniWebHost
-dotnet add package OmniWebHost.Windows
-dotnet add package OmniWebHost.WebView2
+dotnet add package OmniHost
+dotnet add package OmniHost.Windows
+dotnet add package OmniHost.WebView2
 ```
 
 ## Your First App
@@ -22,14 +22,14 @@ dotnet add package OmniWebHost.WebView2
 Create a console project targeting `net8.0-windows`:
 
 ```csharp
-using OmniWebHost;
-using OmniWebHost.Windows;
-using OmniWebHost.WebView2;
+using OmniHost;
+using OmniHost.Windows;
+using OmniHost.WebView2;
 
 var app = OmniApp.CreateBuilder(args)
     .Configure(o =>
     {
-        o.Title           = "Hello OmniWebHost";
+        o.Title           = "Hello OmniHost";
         o.CustomScheme    = "app";
         o.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
         o.StartUrl        = "app://localhost/index.html";
@@ -60,9 +60,9 @@ sealed class MyApp : IDesktopApp
 }
 ```
 
-`OmniWebHost.WebView2` registers the configured custom scheme when creating the underlying `CoreWebView2Environment`, so `app://localhost/index.html` can be used directly as the startup page.
+`OmniHost.WebView2` registers the configured custom scheme when creating the underlying `CoreWebView2Environment`, so `app://localhost/index.html` can be used directly as the startup page.
 
-Optional host-level behaviour can be configured through `OmniWebHostOptions`, including:
+Optional host-level behaviour can be configured through `OmniHostOptions`, including:
 
 - `WindowStyle = OmniWindowStyle.Frameless` for custom HTML/CSS chrome
 - `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
@@ -86,7 +86,7 @@ Add `wwwroot/index.html`:
 </html>
 ```
 
-The `omni` bridge helper is automatically injected by OmniWebHost before each page loads, so no extra script tag is required.
+The `omni` bridge helper is automatically injected by OmniHost before each page loads, so no extra script tag is required.
 
 ## Win32Runtime and STA
 

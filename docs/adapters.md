@@ -4,17 +4,17 @@ title: Adapters
 
 # Adapters
 
-OmniWebHost uses a pluggable adapter model.  
+OmniHost uses a pluggable adapter model.  
 Each adapter wraps a concrete browser engine and exposes a uniform `IWebViewAdapter` API.
 
 ## Available Adapters
 
 | Package | Engine | Platform | Status |
 |---------|--------|----------|--------|
-| `OmniWebHost.WebView2` | Microsoft WebView2 | Windows 10/11 | ✅ Preview (functional) |
-| `OmniWebHost.Cef` | Chromium Embedded Framework | Windows / macOS / Linux | 📋 Planned |
-| `OmniWebHost.WKWebView` | WKWebView | macOS | 📋 Planned |
-| `OmniWebHost.WebKitGtk` | WebKitGTK | Linux | 📋 Planned |
+| `OmniHost.WebView2` | Microsoft WebView2 | Windows 10/11 | ✅ Preview (functional) |
+| `OmniHost.Cef` | Chromium Embedded Framework | Windows / macOS / Linux | 📋 Planned |
+| `OmniHost.WKWebView` | WKWebView | macOS | 📋 Planned |
+| `OmniHost.WebKitGtk` | WebKitGTK | Linux | 📋 Planned |
 
 ## Using an Adapter
 
@@ -32,7 +32,7 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
 
 ## Implementing a Custom Adapter
 
-1. Reference `OmniWebHost.Abstractions`.
+1. Reference `OmniHost.Abstractions`.
 2. Implement `IWebViewAdapterFactory`:
    ```csharp
    public class MyAdapterFactory : IWebViewAdapterFactory
@@ -49,7 +49,7 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
        public string AdapterId => "my-engine";
        public BrowserCapabilities Capabilities => new() { EngineName = "MyEngine", ... };
        public IJsBridge JsBridge => _bridge;
-       public Task InitializeAsync(HostSurfaceDescriptor surface, OmniWebHostOptions options, CancellationToken ct = default) { ... }
+       public Task InitializeAsync(HostSurfaceDescriptor surface, OmniHostOptions options, CancellationToken ct = default) { ... }
        public Task NavigateAsync(string url, CancellationToken ct = default) { ... }
        public ValueTask DisposeAsync() { ... }
    }

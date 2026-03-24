@@ -5,11 +5,11 @@
 > Goal: establish a clean, pluggable architecture; ship the Windows/WebView2 path.
 
 - [x] Repository structure & docs baseline
-- [x] `OmniWebHost.Abstractions` — interfaces & models
-- [x] `OmniWebHost.Core` — builder & runner scaffolding
-- [x] `OmniWebHost` — `OmniApp.CreateBuilder` entry point
-- [x] `OmniWebHost.Hosting` — `IHostBuilder` extensions
-- [x] `OmniWebHost.WebView2` — WebView2 adapter placeholder
+- [x] `OmniHost.Abstractions` — interfaces & models
+- [x] `OmniHost.Core` — builder & runner scaffolding
+- [x] `OmniHost` — `OmniApp.CreateBuilder` entry point
+- [x] `OmniHost.Hosting` — `IHostBuilder` extensions
+- [x] `OmniHost.WebView2` — WebView2 adapter placeholder
 - [x] Real WebView2 runtime initialisation (`CoreWebView2Environment`)
 - [x] JS Bridge wired to `CoreWebView2.ExecuteScriptAsync` / `WebMessageReceived`
 - [x] Custom URI scheme support (serve local assets without HTTP server)
@@ -30,7 +30,7 @@
 ### Design goals
 
 - Keep the first working Windows path intact while we refactor around it.
-- Move platform window hosting out of `OmniWebHost.WebView2`; WebView2 should own
+- Move platform window hosting out of `OmniHost.WebView2`; WebView2 should own
   browser integration, not Win32 window creation.
 - Support multiple host-window implementations per platform/toolkit.
 - Prepare for future adapters that need more than a raw handle.
@@ -71,10 +71,10 @@
 
 ```text
 src/
-  OmniWebHost/
+  OmniHost/
     OmniApp.cs
 
-  OmniWebHost.Abstractions/
+  OmniHost.Abstractions/
     Hosting/
       IDesktopRuntime.cs
       IHostWindow.cs
@@ -90,19 +90,19 @@ src/
     App/
       IDesktopApp.cs
     Options/
-      OmniWebHostOptions.cs
+      OmniHostOptions.cs
       OmniWindowStyle.cs
       OmniScrollBarMode.cs
 
-  OmniWebHost.Core/
+  OmniHost.Core/
     Hosting/
-      OmniWebHostApp.cs
-      OmniWebHostBuilder.cs
+      OmniHostApp.cs
+      OmniHostBuilder.cs
       HostWindowCoordinator.cs
     Browser/
       NullJsBridge.cs
 
-  OmniWebHost.Windows/
+  OmniHost.Windows/
     Runtime/
       Win32Runtime.cs
     Hosting/
@@ -115,16 +115,16 @@ src/
       NativeMethods.cs
       Win32SynchronizationContext.cs
 
-  OmniWebHost.WebView2/
+  OmniHost.WebView2/
     WebView2Adapter.cs
     WebView2AdapterFactory.cs
     WebView2JsBridge.cs
 
-  OmniWebHost.AppKit/           (future)
-  OmniWebHost.WKWebView/        (future)
-  OmniWebHost.Gtk/              (future)
-  OmniWebHost.WebKitGtk/        (future)
-  OmniWebHost.Cef/              (future)
+  OmniHost.AppKit/           (future)
+  OmniHost.WKWebView/        (future)
+  OmniHost.Gtk/              (future)
+  OmniHost.WebKitGtk/        (future)
+  OmniHost.Cef/              (future)
 ```
 
 ### Implementation phases
@@ -138,9 +138,9 @@ src/
 
 #### Phase 2 — Move Windows hosting out of the WebView2 package
 
-- [x] Create `OmniWebHost.Windows`.
+- [x] Create `OmniHost.Windows`.
 - [x] Move `Win32Runtime`, `Win32HostWindow`, Win32 interop, and DWM logic there.
-- [x] Leave `OmniWebHost.WebView2` focused on browser hosting and JS bridge only.
+- [x] Leave `OmniHost.WebView2` focused on browser hosting and JS bridge only.
 - [x] Keep the public sample API simple: `.UseRuntime(new Win32Runtime())`.
 
 #### Phase 3 — Make window-frame implementations pluggable
@@ -157,7 +157,7 @@ src/
 - [x] Add a host-window coordinator for multi-window lifecycle management.
 - [x] Keep single-window app startup as the default path.
 - [x] Add internal window definitions and tracked-window snapshots so future main/auxiliary windows can share one coordination pipeline.
-- [x] Clone `OmniWebHostOptions` per tracked window so future multi-window instances do not share one mutable options object.
+- [x] Clone `OmniHostOptions` per tracked window so future multi-window instances do not share one mutable options object.
 
 #### Phase 5 — Bring the pattern to other platforms
 
@@ -175,8 +175,8 @@ src/
 
 ## Naming Strategy
 
-> Decision: use `Omni` as the short product brand and `OmniHost` as the planned
-> technical package / namespace family after the hosting refactor stabilizes.
+> Decision: use `Omni` as the short product brand and `OmniHost` as the
+> technical package / namespace family.
 
 ### Why this direction
 
@@ -184,44 +184,53 @@ src/
 - `OmniHost` is shorter than `OmniWebHost` while still matching the product's
   nature as a native host for web-powered desktop apps.
 - Renaming at the same time as the hosting refactor would create too much churn,
-  so we will stage the rename after the new seams are in place.
+  so we staged the rename after the new seams were in place.
 
-### Planned rename path
+### Rename status
 
-- Current state:
-  - brand and technical name both use `OmniWebHost`
-- Transitional state:
-  - docs can refer to the product informally as `Omni`
-  - code, packages, assemblies, and namespaces stay on `OmniWebHost.*`
-- Target state:
-  - `OmniWebHost` -> `OmniHost`
-  - `OmniWebHost.Abstractions` -> `OmniHost.Abstractions`
-  - `OmniWebHost.Core` -> `OmniHost.Core`
-  - `OmniWebHost.Hosting` -> `OmniHost.Hosting`
-  - `OmniWebHost.WebView2` -> `OmniHost.WebView2`
-  - `OmniWebHost.Windows` -> `OmniHost.Windows`
+- [x] Complete Runtime / HostWindow Phase 1 seams first.
+- [x] Reassess package/project rename once `IHostWindow` and `HostSurfaceDescriptor`
+      were in place and the Windows host had a stable home.
+- [x] Start the rename before adding macOS/Linux/CEF packages so the migration
+      touches the fewest projects possible.
+- [x] Execute the rename as a single migration pass rather than piecemeal.
 
-### Rename milestone
+### Current state
 
-- [ ] Complete Runtime / HostWindow Phase 1 seams first.
-- [ ] Reassess package/project rename once `IHostWindow` and `HostSurfaceDescriptor`
-      are in place and the Windows host has a stable home.
-- [ ] Execute the rename as a single migration pass rather than piecemeal.
+- brand short name: `Omni`
+- technical package family: `OmniHost.*`
+- solution / projects / assemblies / namespaces / samples now use `OmniHost`
+- migration notes for users live in [MIGRATION.md](MIGRATION.md)
+
+Why now:
+
+- the host/runtime/browser seams are already stable enough
+- `OmniHost.Windows` has already been split out, so package boundaries are clearer
+- delaying the rename until after macOS/Linux/CEF work would multiply the number
+  of projects, package ids, docs, and samples that need to move
+
+Recommended execution order:
+
+1. Rename solution, projects, assembly names, and project references.
+2. Rename namespaces and `using` directives.
+3. Update docs, samples, package instructions, and badges.
+4. Add a migration note to `CHANGELOG.md`.
+5. Rebuild the full solution and fix any remaining namespace / package drift.
 
 ## 0.3.x — macOS (WKWebView)
 
-- [ ] `OmniWebHost.WKWebView` adapter
+- [ ] `OmniHost.WKWebView` adapter
 - [ ] macOS native window integration
 - [ ] JS Bridge parity with WebView2 adapter
 
 ## 0.4.x — Linux (WebKitGTK)
 
-- [ ] `OmniWebHost.WebKitGtk` adapter
+- [ ] `OmniHost.WebKitGtk` adapter
 - [ ] GTK window integration
 
 ## 0.5.x — CEF (cross-platform alternative)
 
-- [ ] `OmniWebHost.Cef` adapter using CefSharp or Chromely
+- [ ] `OmniHost.Cef` adapter using CefSharp or Chromely
 - [ ] Consistent JS Bridge across all adapters
 
 ## Future

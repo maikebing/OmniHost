@@ -1,23 +1,23 @@
-# OmniWebHost
+# OmniHost
 
 **A cross-platform .NET desktop WebView hosting framework.**
 
-[![NuGet](https://img.shields.io/nuget/v/OmniWebHost?label=NuGet)](https://www.nuget.org/packages/OmniWebHost)
+[![NuGet](https://img.shields.io/nuget/v/OmniHost?label=NuGet)](https://www.nuget.org/packages/OmniHost)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build](https://github.com/maikebing/OmniWebHost/actions/workflows/build.yml/badge.svg)](https://github.com/maikebing/OmniWebHost/actions)
+[![Build](https://github.com/maikebing/OmniHost/actions/workflows/build.yml/badge.svg)](https://github.com/maikebing/OmniHost/actions)
 
 ---
 
-## What is OmniWebHost?
+## What is OmniHost?
 
-OmniWebHost lets you embed a web front-end inside a native desktop application using whichever browser engine is available on the target platform.  
+OmniHost lets you embed a web front-end inside a native desktop application using whichever browser engine is available on the target platform.  
 Think of it as a **thin, pluggable host layer** between your .NET application logic and the browser WebView control.
 
 ```
 ┌───────────────────────────────────┐
 │          Your .NET App            │
 ├───────────────────────────────────┤
-│           OmniWebHost             │  ← unified API
+│            OmniHost            │  ← unified API
 ├───────────────────────────────────┤
 │  WebView2  │  CEF  │  WKWebView  │  ← pluggable adapters
 └───────────────────────────────────┘
@@ -40,12 +40,12 @@ Think of it as a **thin, pluggable host layer** between your .NET application lo
 
 The first preview ships the **Windows / WebView2** path:
 
-- `OmniWebHost.Abstractions` — all public interfaces & models
-- `OmniWebHost.Core` — builder + app runner
-- `OmniWebHost` — top-level `OmniApp` entry point
-- `OmniWebHost.Hosting` — `IHostBuilder` extensions
-- `OmniWebHost.Windows` — Windows runtime + raw Win32 host window
-- `OmniWebHost.WebView2` — WebView2 adapter placeholder
+- `OmniHost.Abstractions` — all public interfaces & models
+- `OmniHost.Core` — builder + app runner
+- `OmniHost` — top-level `OmniApp` entry point
+- `OmniHost.Hosting` — `IHostBuilder` extensions
+- `OmniHost.Windows` — Windows runtime + raw Win32 host window
+- `OmniHost.WebView2` — WebView2 adapter placeholder
 
 CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later milestones — see [ROADMAP.md](ROADMAP.md).
 
@@ -53,16 +53,16 @@ CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later mile
 
 ## Current Status
 
-> **0.1.0-preview.1** — Architecture baseline. Placeholder implementations only; not yet production-ready.
+> **0.1.0-preview.3** — Windows/WebView2 path is functional, with the Win32 runtime, JS bridge, custom frame strategies, and the `OmniHost` rename in place.
 
 ---
 
 ## Quick Start
 
 ```csharp
-using OmniWebHost;
-using OmniWebHost.Windows;
-using OmniWebHost.WebView2;
+using OmniHost;
+using OmniHost.Windows;
+using OmniHost.WebView2;
 
 var app = OmniApp.CreateBuilder(args)
     .Configure(o =>
@@ -80,8 +80,8 @@ var app = OmniApp.CreateBuilder(args)
 await app.RunAsync();
 ```
 
-`OmniWebHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
-For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniWebHostOptions`.
+`OmniHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
+For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
 
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 
@@ -103,6 +103,7 @@ omni.on('tick', (data) => console.log(data.time));
 | [Architecture](docs/architecture.md) | Component design and boundaries |
 | [JS Bridge](docs/js-bridge.md) | C# ↔ JavaScript messaging |
 | [Adapters](docs/adapters.md) | Browser engine adapters |
+| [Migration Guide](MIGRATION.md) | Upgrade notes from `OmniWebHost*` to `OmniHost*` |
 | [Roadmap](docs/roadmap.md) | Release plan |
 
 ---

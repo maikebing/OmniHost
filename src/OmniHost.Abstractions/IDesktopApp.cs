@@ -1,0 +1,17 @@
+namespace OmniHost;
+
+/// <summary>
+/// Represents the top-level desktop application managed by OmniHost.
+/// Implement this interface to customise application lifecycle and window behaviour.
+/// </summary>
+public interface IDesktopApp
+{
+    /// <summary>
+    /// Called after the host window and WebView adapter have been initialized,
+    /// but before the main message loop starts.
+    /// </summary>
+    Task OnStartAsync(IWebViewAdapter adapter, CancellationToken cancellationToken = default);
+
+    /// <summary>Called when the user requests the application to close.</summary>
+    Task OnClosingAsync(CancellationToken cancellationToken = default);
+}

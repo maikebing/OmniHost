@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost</RootNamespace>
+    <AssemblyName>OmniHost.Abstractions</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>Abstractions and interfaces for OmniHost – a cross-platform .NET desktop WebView hosting framework.</Description>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- No UseWindowsForms — raw Win32 P/Invoke only, enabling AOT compilation. -->
+    <RootNamespace>OmniHost.WebView2</RootNamespace>
+    <AssemblyName>OmniHost.WebView2</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>Microsoft WebView2 browser adapter for OmniHost.</Description>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniHost.Abstractions\OmniHost.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

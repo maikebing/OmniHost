@@ -8,10 +8,10 @@ The JS Bridge (`IJsBridge`) provides **bidirectional** communication between .NE
 
 ## Injected Helper — `omni`
 
-OmniWebHost automatically injects a lightweight bridge script into every page at document-creation time (before any page script runs). You do **not** need to add a script tag.
+OmniHost automatically injects a lightweight bridge script into every page at document-creation time (before any page script runs). You do **not** need to add a script tag.
 
 ```js
-// omni is always available in OmniWebHost pages
+// omni is always available in OmniHost pages
 omni.invoke(handler, data) → Promise<any>
 omni.on(eventName, callback)
 omni.window.minimize()
@@ -45,7 +45,7 @@ console.log(greeting); // "Hello, Alice!"
 The call returns a `Promise` that resolves with the parsed return value.
 
 For custom window chrome, pages can mark any drag region with the `omni-drag`
-attribute. OmniWebHost automatically wires these regions so:
+attribute. OmniHost automatically wires these regions so:
 
 - Left-drag moves the window
 - Double-click toggles maximize / restore

@@ -6,23 +6,23 @@ title: Architecture
 
 ## Overview
 
-OmniWebHost is structured as a set of layered packages with clear boundaries:
+OmniHost is structured as a set of layered packages with clear boundaries:
 
 ```
 ┌──────────────────────────────────────────────┐
 │           Application Code                   │
 ├──────────────────────────────────────────────┤
-│  OmniWebHost  (OmniApp entry point)          │
+│  OmniHost  (OmniApp entry point)          │
 ├───────────────┬──────────────────────────────┤
-│ OmniWebHost   │  OmniWebHost.Hosting         │
+│ OmniHost   │  OmniHost.Hosting         │
 │ .Core         │  (IHostBuilder extensions)   │
 ├───────────────┴──────────────────────────────┤
-│          OmniWebHost.Abstractions            │
+│          OmniHost.Abstractions            │
 │  IWebViewAdapter  IWebViewAdapterFactory     │
 │  IHostWindow      IHostWindowFactory         │
 │  IWindowFrameStrategy                        │
 │  IJsBridge        IDesktopApp                │
-│  BrowserCapabilities  OmniWebHostOptions     │
+│  BrowserCapabilities  OmniHostOptions     │
 ├──────────────┬───────────────┬──────────────┤
 │ WebView2     │  CEF (future) │  WKWebView   │
 │ Adapter      │               │  (future)    │
@@ -33,12 +33,12 @@ OmniWebHost is structured as a set of layered packages with clear boundaries:
 
 | Package | Role |
 |---------|------|
-| `OmniWebHost.Abstractions` | Public interfaces and model types. No implementation code. |
-| `OmniWebHost.Core` | Builder pattern, `OmniWebHostApp` runner, and host-window coordination. |
-| `OmniWebHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
-| `OmniWebHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
-| `OmniWebHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
-| `OmniWebHost.WebView2` | Microsoft WebView2 adapter (Windows). |
+| `OmniHost.Abstractions` | Public interfaces and model types. No implementation code. |
+| `OmniHost.Core` | Builder pattern, `OmniHostApp` runner, and host-window coordination. |
+| `OmniHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
+| `OmniHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
+| `OmniHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
+| `OmniHost.WebView2` | Microsoft WebView2 adapter (Windows). |
 
 ## Key Interfaces
 
@@ -72,21 +72,21 @@ Optional lifecycle callbacks (`OnStartAsync`, `OnClosingAsync`) for the host app
 Describes what a given adapter can do (DevTools, custom schemes, JS bridge, host-surface support, …).
 
 ### `HostWindowCoordinator`
-Current single-window coordinator in `OmniWebHost.Core` that creates the adapter,
+Current single-window coordinator in `OmniHost.Core` that creates the adapter,
 creates the host window, tracks the current open-window set, and runs that window
 through the selected runtime. It now also owns internal window definitions and
 window snapshots so future auxiliary windows can reuse the same coordination path.
-Each tracked window now keeps its own cloned `OmniWebHostOptions` instance.
+Each tracked window now keeps its own cloned `OmniHostOptions` instance.
 
 ## Entry Point Flow
 
 ```
 OmniApp.CreateBuilder(args)
-  → OmniWebHostBuilder
-    .Configure(...)         ← set OmniWebHostOptions
+  → OmniHostBuilder
+    .Configure(...)         ← set OmniHostOptions
     .UseAdapter(factory)    ← register adapter factory
     .Build()
-  → IOmniWebHostApp
+  → IOmniHostApp
     .RunAsync()
       → HostWindowCoordinator.RunMainWindow(...)
       → IWebViewAdapterFactory.Create()
