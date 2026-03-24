@@ -154,8 +154,11 @@ internal sealed class GtkHostWindow : IHostWindow
         {
             await _adapter.InitializeAsync(Surface, _options);
             _adapter.Resize(_surfaceWidth, _surfaceHeight);
+            RegisterWindowBridgeHandlers();
 
-            await PublishWindowStateChangedIfNeededAsync("initialized", "normal");
+            await PublishWindowStateChangedIfNeededAsync(
+                "initialized",
+                _options.StartMaximized ? "maximized" : "normal");
 
             if (_desktopApp is IWindowAwareDesktopApp windowAwareDesktopApp)
             {
@@ -175,6 +178,51 @@ internal sealed class GtkHostWindow : IHostWindow
             _deferredError = ex;
             RequestClose();
         }
+    }
+
+    private void RegisterWindowBridgeHandlers()
+    {
+        var bridge = _adapter.JsBridge;
+
+        bridge.RegisterHandler("window.minimize", _payload =>
+        {
+            if (_windowHandle != IntPtr.Zero)
+            {
+                GtkNative.GtkWindowIconify(_windowHandle);
+                _ = PublishWindowStateChangedIfNeededAsync("bridge_minimize", "minimized");
+            }
+
+            return Task.FromResult("null");
+        });
+
+        bridge.RegisterHandler("window.maximize", _payload =>
+        {
+            if (_windowHandle != IntPtr.Zero)
+            {
+                var shouldRestore = string.Equals(_lastWindowState, "maximized", StringComparison.Ordinal);
+                if (shouldRestore)
+                {
+                    GtkNative.GtkWindowUnmaximize(_windowHandle);
+                    _ = PublishWindowStateChangedIfNeededAsync("bridge_restore", "normal");
+                }
+                else
+                {
+                    GtkNative.GtkWindowMaximize(_windowHandle);
+                    _ = PublishWindowStateChangedIfNeededAsync("bridge_maximize", "maximized");
+                }
+            }
+
+            return Task.FromResult("null");
+        });
+
+        bridge.RegisterHandler("window.close", _payload =>
+        {
+            RequestClose();
+            return Task.FromResult("null");
+        });
+
+        bridge.RegisterHandler("window.startDrag", _payload => Task.FromResult("null"));
+        bridge.RegisterHandler("window.showSystemMenu", _payload => Task.FromResult("null"));
     }
 
     private int OnDeleteEvent(IntPtr widget, IntPtr eventData, IntPtr userData)

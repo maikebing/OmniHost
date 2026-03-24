@@ -4,19 +4,31 @@ title: Adapters
 
 # Adapters
 
-OmniHost uses a pluggable adapter model.  
+OmniHost uses a pluggable adapter model.
 Each adapter wraps a concrete browser engine and exposes a uniform `IWebViewAdapter` API.
 
 ## Available Adapters
 
 | Package | Engine | Platform | Status |
 |---------|--------|----------|--------|
-| `OmniHost.WebView2` | Microsoft WebView2 | Windows 10/11 | ✅ Preview (functional) |
-| `OmniHost.Cef` | Chromium Embedded Framework | Windows / macOS / Linux | 📋 Planned |
-| `OmniHost.WKWebView` | WKWebView | macOS | 📋 Planned |
-| `OmniHost.WebKitGtk` | WebKitGTK | Linux | 📋 Planned |
+| `OmniHost.WebView2` | Microsoft WebView2 | Windows 10/11 | Preview (functional) |
+| `OmniHost.WebKitGtk` | WebKitGTK | Linux | Preview (experimental) |
+| `OmniHost.WKWebView` | WKWebView | macOS | Planned |
+| `OmniHost.Cef` | Chromium Embedded Framework | Windows / macOS / Linux | Planned |
 
-The Linux host/runtime foundation has started in `OmniHost.Gtk`, but a Linux browser adapter is still pending before that path becomes end-to-end usable.
+`OmniHost.WebKitGtk` is the first Linux browser adapter and is designed to pair with `OmniHost.Gtk`.
+
+Current experimental scope:
+
+- attach a WebKitGTK web view to a `HostSurfaceKind.GtkWidget`
+- enable JavaScript execution and the `omni` JS bridge
+- support host-to-page events through the shared bridge contract
+- translate `app://localhost/...` startup URLs to local `file://...` navigation when `ContentRootPath` is configured
+
+Current v1 limitations:
+
+- custom scheme interception is not implemented yet, so `BrowserCapabilities.SupportsCustomSchemes` remains `false`
+- Linux window chrome helpers like `startDrag` and `showSystemMenu` are currently no-op bridge handlers
 
 ## Using an Adapter
 
@@ -26,7 +38,13 @@ Pass the adapter factory to the builder:
 .UseAdapter(new WebView2AdapterFactory())
 ```
 
-Or register via DI and let the host resolve it automatically (Hosting integration):
+Linux example:
+
+```csharp
+.UseAdapter(new WebKitGtkAdapterFactory())
+```
+
+Or register via DI and let the host resolve it automatically:
 
 ```csharp
 services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
@@ -36,6 +54,7 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
 
 1. Reference `OmniHost.Abstractions`.
 2. Implement `IWebViewAdapterFactory`:
+
    ```csharp
    public class MyAdapterFactory : IWebViewAdapterFactory
    {
@@ -44,7 +63,9 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
        public IWebViewAdapter Create() => new MyAdapter();
    }
    ```
+
 3. Implement `IWebViewAdapter`:
+
    ```csharp
    public class MyAdapter : IWebViewAdapter
    {
@@ -57,13 +78,10 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
    }
    ```
 
-`HostSurfaceDescriptor` is the forward-looking API because not every engine will
-always attach to a plain `HWND`. A legacy raw-handle overload still exists for
-simple adapters during the transition.
+`HostSurfaceDescriptor` is the forward-looking API because not every engine will always attach to a plain `HWND`.
+A legacy raw-handle overload still exists for simple adapters during the transition.
 
-Adapters should also report their supported `HostSurfaceKind` values through
-`BrowserCapabilities.SupportedHostSurfaces` so the host can reject incompatible
-runtime/window combinations early.
+Adapters should also report their supported `HostSurfaceKind` values through `BrowserCapabilities.SupportedHostSurfaces` so the host can reject incompatible runtime/window combinations early.
 
 ## Capability Detection
 
@@ -73,4 +91,12 @@ Check `IWebViewAdapterFactory.IsAvailable` before registering:
 var factory = new WebView2AdapterFactory();
 if (!factory.IsAvailable)
     throw new PlatformNotSupportedException("WebView2 runtime is not installed.");
+```
+
+Linux example:
+
+```csharp
+var factory = new WebKitGtkAdapterFactory();
+if (!factory.IsAvailable)
+    throw new PlatformNotSupportedException("WebKitGTK runtime libraries are not available.");
 ```

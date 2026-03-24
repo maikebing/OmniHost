@@ -17,6 +17,9 @@ dotnet add package OmniHost.Windows
 dotnet add package OmniHost.WebView2
 ```
 
+For the experimental Linux path, use `OmniHost.Gtk` with `OmniHost.WebKitGtk`.
+The getting-started sample below still focuses on the more complete Windows/WebView2 path.
+
 ## Your First App
 
 Create a console project targeting `net8.0-windows`:

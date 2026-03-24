@@ -52,6 +52,12 @@ internal static class GtkNative
     [DllImport(GtkLib, EntryPoint = "gtk_window_maximize")]
     internal static extern void GtkWindowMaximize(IntPtr window);
 
+    [DllImport(GtkLib, EntryPoint = "gtk_window_unmaximize")]
+    internal static extern void GtkWindowUnmaximize(IntPtr window);
+
+    [DllImport(GtkLib, EntryPoint = "gtk_window_iconify")]
+    internal static extern void GtkWindowIconify(IntPtr window);
+
     [DllImport(GtkLib, EntryPoint = "gtk_window_present")]
     internal static extern void GtkWindowPresent(IntPtr window);
 
