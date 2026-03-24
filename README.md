@@ -78,6 +78,7 @@ That manager can open windows, close windows, activate windows, look up live con
 On Linux, use `OmniHost.Gtk` with `OmniHost.WebKitGtk` for the experimental path. The current v1 flow targets GTK widget hosting and now serves `app://localhost/...` assets through a native WebKitGTK URI scheme handler.
 There is now a matching sample project at `samples/OmniHost.Sample.Gtk`.
 There is also `samples/OmniHost.Sample.CrossPlatform`, which auto-selects the Windows or Linux runtime/adapter pair based on the current platform.
+For the dedicated Windows style comparison demo, inspect `samples/OmniHost.Sample.WindowStyles`.
 
 In `wwwroot/index.html` the bridge helper is auto-injected, so no script tag is required:
 

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.Sample.WindowStyles</RootNamespace>
+    <AssemblyName>OmniHost.Sample.WindowStyles</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="wwwroot\**\*" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OmniHost\OmniHost.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.Windows\OmniHost.Windows.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.WebView2\OmniHost.WebView2.csproj" />
+  </ItemGroup>
+
+</Project>

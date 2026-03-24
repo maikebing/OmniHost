@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmniHost.Sample.CrossPlatfo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmniHost.WinForms", "src\OmniHost.WinForms\OmniHost.WinForms.csproj", "{D0352E4B-32C5-40CE-87B2-A5BBACA61CA0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmniHost.Sample.WindowStyles", "samples\OmniHost.Sample.WindowStyles\OmniHost.Sample.WindowStyles.csproj", "{C94DDB9F-7D38-41ED-8A01-B12871541259}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -185,6 +187,18 @@ Global
 		{D0352E4B-32C5-40CE-87B2-A5BBACA61CA0}.Release|x64.Build.0 = Release|Any CPU
 		{D0352E4B-32C5-40CE-87B2-A5BBACA61CA0}.Release|x86.ActiveCfg = Release|Any CPU
 		{D0352E4B-32C5-40CE-87B2-A5BBACA61CA0}.Release|x86.Build.0 = Release|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Debug|x64.Build.0 = Debug|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Debug|x86.Build.0 = Debug|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Release|x64.ActiveCfg = Release|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Release|x64.Build.0 = Release|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Release|x86.ActiveCfg = Release|Any CPU
+		{C94DDB9F-7D38-41ED-8A01-B12871541259}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -195,5 +209,6 @@ Global
 		{FEC40A26-1E87-4960-8513-F7AA8CF235B4} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{1B7A4CB8-FD79-47C7-8E3B-C49E5FCE7E18} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{D0352E4B-32C5-40CE-87B2-A5BBACA61CA0} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{C94DDB9F-7D38-41ED-8A01-B12871541259} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 	EndGlobalSection
 EndGlobal

@@ -69,6 +69,13 @@ public class OmniHostOptions
     public OmniWindowStyle WindowStyle { get; set; } = OmniWindowStyle.Normal;
 
     /// <summary>
+    /// Optional built-in title-bar preset rendered by the host instead of by page HTML.
+    /// This is especially useful for editor-like and productivity-like shells that should
+    /// ship a consistent chrome without requiring each hosted page to duplicate it.
+    /// </summary>
+    public OmniBuiltInTitleBarStyle BuiltInTitleBarStyle { get; set; } = OmniBuiltInTitleBarStyle.None;
+
+    /// <summary>
     /// Creates a detached copy of the current options instance.
     /// </summary>
     public OmniHostOptions Clone()
@@ -87,5 +94,6 @@ public class OmniHostOptions
             ScrollBarMode = ScrollBarMode,
             ScrollBarCustomCss = ScrollBarCustomCss,
             WindowStyle = WindowStyle,
+            BuiltInTitleBarStyle = BuiltInTitleBarStyle,
         };
 }

@@ -241,7 +241,7 @@ Recommended execution order:
 - Enhanced DI integration
 - Hot-reload support for web assets
 - Packaged distribution helpers (MSIX, AppImage, DMG)
-- [x] DWMBlurGlass-inspired Windows host preset (public DWM API path)
+- [x] DWMBlurGlass-inspired preset in `OmniHost.Windows` (public DWM API path)
 - [x] 原生界面带标题栏带边框
 - [x] VSCode UI host preset
 - [ ] WinForms runtime / host window
