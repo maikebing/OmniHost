@@ -44,6 +44,7 @@ The first preview ships the **Windows / WebView2** path:
 - `OmniWebHost.Core` — builder + app runner
 - `OmniWebHost` — top-level `OmniApp` entry point
 - `OmniWebHost.Hosting` — `IHostBuilder` extensions
+- `OmniWebHost.Windows` — Windows runtime + raw Win32 host window
 - `OmniWebHost.WebView2` — WebView2 adapter placeholder
 
 CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later milestones — see [ROADMAP.md](ROADMAP.md).
@@ -60,6 +61,7 @@ CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later mile
 
 ```csharp
 using OmniWebHost;
+using OmniWebHost.Windows;
 using OmniWebHost.WebView2;
 
 var app = OmniApp.CreateBuilder(args)
@@ -78,14 +80,17 @@ var app = OmniApp.CreateBuilder(args)
 await app.RunAsync();
 ```
 
+`OmniWebHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
+For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniWebHostOptions`.
+
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 
 ```js
 // JS → .NET
-const result = await window.omni.invoke('greet', 'World');
+const result = await omni.invoke('greet', 'World');
 
 // .NET → JS push events
-window.omni.on('tick', (data) => console.log(data.time));
+omni.on('tick', (data) => console.log(data.time));
 ```
 
 ---

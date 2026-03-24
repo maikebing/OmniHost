@@ -45,6 +45,19 @@ public class OmniWebHostOptions
     public Dictionary<string, string> AdapterSettings { get; set; } = new();
 
     /// <summary>
+    /// Host-level scrollbar behaviour applied to hosted pages.
+    /// Defaults to <see cref="OmniScrollBarMode.Auto"/>, which leaves overflow styling
+    /// entirely up to the page.
+    /// </summary>
+    public OmniScrollBarMode ScrollBarMode { get; set; } = OmniScrollBarMode.Auto;
+
+    /// <summary>
+    /// Custom CSS injected when <see cref="ScrollBarMode"/> is set to
+    /// <see cref="OmniScrollBarMode.Custom"/>.
+    /// </summary>
+    public string? ScrollBarCustomCss { get; set; }
+
+    /// <summary>
     /// Visual style of the native host window chrome.
     /// Defaults to <see cref="OmniWindowStyle.Normal"/> (standard OS title bar).
     /// Set to <see cref="OmniWindowStyle.Frameless"/> to remove the system title bar
@@ -52,4 +65,3 @@ public class OmniWebHostOptions
     /// </summary>
     public OmniWindowStyle WindowStyle { get; set; } = OmniWindowStyle.Normal;
 }
-

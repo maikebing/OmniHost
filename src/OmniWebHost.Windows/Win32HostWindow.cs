@@ -1,15 +1,16 @@
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
-using OmniWebHost.WebView2.Win32;
+using OmniWebHost.Windows.Frames;
+using OmniWebHost.Windows.Win32;
 
-namespace OmniWebHost.WebView2;
+namespace OmniWebHost.Windows;
 
 /// <summary>
-/// AOT-compatible raw Win32 window that hosts a <see cref="WebView2Adapter"/>.
+/// AOT-compatible raw Win32 window that hosts an <see cref="IWebViewAdapter"/>.
 /// No WinForms or WPF dependency — window creation and the message loop are
 /// implemented entirely via P/Invoke.
 /// </summary>
-internal sealed class OmniHostWindow
+internal sealed class Win32HostWindow : IHostWindow
 {
     // ── Class registration ────────────────────────────────────────────────────
 
@@ -17,7 +18,7 @@ internal sealed class OmniHostWindow
 
     /// <summary>
     /// Static WndProc delegate stored in a field to prevent GC collection.
-    /// Used for all <see cref="OmniHostWindow"/> instances.
+    /// Used for all <see cref="Win32HostWindow"/> instances.
     /// </summary>
     private static readonly NativeMethods.WndProcDelegate _sharedWndProc = StaticWndProc;
 
@@ -29,19 +30,33 @@ internal sealed class OmniHostWindow
     private readonly OmniWebHostOptions _options;
     private readonly IWebViewAdapter    _adapter;
     private readonly IDesktopApp?       _desktopApp;
+    private readonly IWin32WindowFrameStrategy _frameStrategy;
 
     private IntPtr                      _hwnd;
     private Win32SynchronizationContext? _syncContext;
     private Exception?                  _deferredError;
+    private int                         _surfaceWidth;
+    private int                         _surfaceHeight;
 
     // ── Construction ──────────────────────────────────────────────────────────
 
-    internal OmniHostWindow(OmniWebHostOptions options, IWebViewAdapter adapter, IDesktopApp? desktopApp)
+    internal Win32HostWindow(
+        OmniWebHostOptions options,
+        IWebViewAdapter adapter,
+        IDesktopApp? desktopApp,
+        IWin32WindowFrameStrategy frameStrategy)
     {
         _options    = options;
         _adapter    = adapter;
         _desktopApp = desktopApp;
+        _frameStrategy = frameStrategy ?? throw new ArgumentNullException(nameof(frameStrategy));
+        _surfaceWidth = options.Width;
+        _surfaceHeight = options.Height;
     }
+
+    /// <inheritdoc/>
+    public HostSurfaceDescriptor Surface
+        => new(HostSurfaceKind.Hwnd, _hwnd, _surfaceWidth, _surfaceHeight);
 
     // ── Public entry point ────────────────────────────────────────────────────
 
@@ -49,13 +64,14 @@ internal sealed class OmniHostWindow
     /// Creates the native window, runs the Win32 message loop, and returns only
     /// after the window is closed.  Throws if async WebView2 initialization failed.
     /// </summary>
-    internal void Run()
+    public void Run()
     {
         // Best-effort per-monitor DPI awareness (requires shcore.dll on Win 8.1+).
         TrySetDpiAwareness();
 
         RegisterWindowClass();
         _hwnd = CreateNativeWindow();
+        _frameStrategy.OnWindowCreated(_hwnd);
 
         // Install the custom sync context BEFORE posting WM_APP_INIT so that
         // 'await' continuations inside InitializeAsync are dispatched here.
@@ -70,7 +86,7 @@ internal sealed class OmniHostWindow
         NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_APP_INIT, IntPtr.Zero, IntPtr.Zero);
 
         // ── Win32 message loop ────────────────────────────────────────────────
-        while (NativeMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
+        while (NativeMethods.GetMessageW(out var msg, IntPtr.Zero, 0, 0) > 0)
         {
             NativeMethods.TranslateMessage(ref msg);
             NativeMethods.DispatchMessageW(ref msg);
@@ -121,12 +137,7 @@ internal sealed class OmniHostWindow
     {
         var hInstance = NativeMethods.GetModuleHandleW(IntPtr.Zero);
 
-        (uint style, uint exStyle) = _options.WindowStyle == OmniWindowStyle.Frameless
-            ? (NativeMethods.WS_POPUP | NativeMethods.WS_VISIBLE
-               | NativeMethods.WS_CLIPCHILDREN | NativeMethods.WS_CLIPSIBLINGS,
-               NativeMethods.WS_EX_APPWINDOW)
-            : (NativeMethods.WS_OVERLAPPEDWINDOW | NativeMethods.WS_CLIPCHILDREN,
-               0u);
+        var (style, exStyle) = _frameStrategy.GetWindowStyles();
 
         // We pass a GCHandle to 'this' as lpParam so the static WndProc can
         // retrieve the instance during WM_NCCREATE (before CreateWindowExW returns).
@@ -160,7 +171,7 @@ internal sealed class OmniHostWindow
         // lParam is a pointer to CREATESTRUCTW. Its first field (offset 0) is
         // lpCreateParams — the value we passed as the last argument to CreateWindowExW.
         // We store that GCHandle pointer in GWLP_USERDATA so every subsequent message
-        // can reach the OmniHostWindow instance.
+        // can reach the Win32HostWindow instance.
         if (msg == NativeMethods.WM_NCCREATE)
         {
             // Marshal.ReadIntPtr(lParam, 0) reads CREATESTRUCTW.lpCreateParams,
@@ -172,7 +183,7 @@ internal sealed class OmniHostWindow
         }
 
         var userData = NativeMethods.GetWindowLongPtrW(hwnd, NativeMethods.GWLP_USERDATA);
-        if (userData != IntPtr.Zero && GCHandle.FromIntPtr(userData).Target is OmniHostWindow win)
+        if (userData != IntPtr.Zero && GCHandle.FromIntPtr(userData).Target is Win32HostWindow win)
             return win.InstanceWndProc(hwnd, msg, wParam, lParam);
 
         return NativeMethods.DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -182,6 +193,9 @@ internal sealed class OmniHostWindow
 
     private IntPtr InstanceWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
     {
+        if (_frameStrategy.TryHandleMessage(hwnd, msg, wParam, lParam, out var frameResult))
+            return frameResult;
+
         switch (msg)
         {
             case NativeMethods.WM_APP_INIT:
@@ -201,9 +215,6 @@ internal sealed class OmniHostWindow
             case NativeMethods.WM_ERASEBKGND:
                 // Suppress background erase — WebView2 paints the entire client area.
                 return (IntPtr)1;
-
-            case NativeMethods.WM_NCHITTEST when _options.WindowStyle == OmniWindowStyle.Frameless:
-                return FramelessHitTest(hwnd, lParam);
 
             case NativeMethods.WM_CLOSE:
                 OnClose(hwnd);
@@ -227,15 +238,13 @@ internal sealed class OmniHostWindow
             if (!NativeMethods.GetClientRect(hwnd, out var rc))
                 rc = new NativeMethods.RECT { right = _options.Width, bottom = _options.Height };
 
-            await _adapter.InitializeAsync(hwnd, _options);
+            _surfaceWidth = rc.right - rc.left;
+            _surfaceHeight = rc.bottom - rc.top;
 
-            if (_adapter is WebView2Adapter wv2)
-                wv2.Resize(rc.right - rc.left, rc.bottom - rc.top);
+            await _adapter.InitializeAsync(Surface, _options);
+            _adapter.Resize(_surfaceWidth, _surfaceHeight);
 
-            // For Frameless mode: register window-control bridge handlers and
-            // inject CSS variable so the page can style itself accordingly.
-            if (_options.WindowStyle == OmniWindowStyle.Frameless)
-                RegisterWindowBridgeHandlers();
+            RegisterWindowBridgeHandlers();
 
             if (_desktopApp is not null)
                 await _desktopApp.OnStartAsync(_adapter);
@@ -247,13 +256,11 @@ internal sealed class OmniHostWindow
             _deferredError = ex;
 
             var text =
-                $"OmniWebHost failed to initialize WebView2:\n\n{ex.Message}\n\n" +
-                "Make sure the Microsoft Edge WebView2 Runtime is installed.\n" +
-                "Download: https://developer.microsoft.com/microsoft-edge/webview2/";
+                $"OmniWebHost failed to initialize the browser adapter '{_adapter.AdapterId}':\n\n{ex.Message}";
 
             NativeMethods.MessageBoxW(
                 hwnd, text,
-                "OmniWebHost – Initialization Error",
+                "OmniWebHost - Initialization Error",
                 NativeMethods.MB_OK | NativeMethods.MB_ICONERROR);
 
             NativeMethods.DestroyWindow(hwnd);
@@ -263,9 +270,9 @@ internal sealed class OmniHostWindow
     // ── Frameless window-control bridge handlers ──────────────────────────────
 
     /// <summary>
-    /// Registers JS bridge handlers that let the web content control a frameless window.
-    /// Exposed as <c>window.omni.window.minimize()</c>, <c>.maximize()</c>,
-    /// <c>.close()</c>, and <c>.startDrag()</c>.
+    /// Registers JS bridge handlers that let the web content control the native window.
+    /// Exposed as <c>omni.window.minimize()</c>, <c>.maximize()</c>,
+    /// <c>.close()</c>, <c>.startDrag()</c>, and <c>.showSystemMenu()</c>.
     /// </summary>
     private void RegisterWindowBridgeHandlers()
     {
@@ -307,6 +314,42 @@ internal sealed class OmniHostWindow
                 (IntPtr)NativeMethods.HTCAPTION, lParam);
             return Task.FromResult("null");
         });
+
+        bridge.RegisterHandler("window.showSystemMenu", _ =>
+        {
+            ShowSystemMenuAtCursor();
+            return Task.FromResult("null");
+        });
+    }
+
+    private void ShowSystemMenuAtCursor()
+    {
+        var menu = NativeMethods.GetSystemMenu(_hwnd, false);
+        if (menu == IntPtr.Zero)
+            return;
+
+        if (!NativeMethods.GetCursorPos(out var pt))
+            return;
+
+        NativeMethods.SetForegroundWindow(_hwnd);
+        var command = NativeMethods.TrackPopupMenuEx(
+            menu,
+            NativeMethods.TPM_LEFTALIGN | NativeMethods.TPM_RETURNCMD | NativeMethods.TPM_RIGHTBUTTON,
+            pt.x,
+            pt.y,
+            _hwnd,
+            IntPtr.Zero);
+
+        if (command != 0)
+        {
+            NativeMethods.PostMessageW(
+                _hwnd,
+                NativeMethods.WM_SYSCOMMAND,
+                (IntPtr)command,
+                IntPtr.Zero);
+        }
+
+        NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_NULL, IntPtr.Zero, IntPtr.Zero);
     }
 
     // ── Message handlers ──────────────────────────────────────────────────────
@@ -318,8 +361,10 @@ internal sealed class OmniHostWindow
         int w = (int)((uint)lParam & 0xFFFFu);
         int h = (int)((uint)lParam >> 16);
 
-        if (_adapter is WebView2Adapter wv2)
-            wv2.Resize(w, h);
+        _surfaceWidth = w;
+        _surfaceHeight = h;
+
+        _adapter.Resize(w, h);
     }
 
     private async void OnClose(IntPtr hwnd)
@@ -345,38 +390,6 @@ internal sealed class OmniHostWindow
 
         _adapter.DisposeAsync().AsTask().GetAwaiter().GetResult();
         NativeMethods.PostQuitMessage(0);
-    }
-
-    // ── Frameless hit-test ────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Returns edge/corner hit-test values for the resize border of a frameless window.
-    /// Uses <c>short</c> casts for correct sign extension on negative-coordinate monitors.
-    /// </summary>
-    private static IntPtr FramelessHitTest(IntPtr hwnd, IntPtr lParam)
-    {
-        if (!NativeMethods.GetWindowRect(hwnd, out var wr))
-            return (IntPtr)NativeMethods.HTCLIENT;
-
-        // GET_X_LPARAM / GET_Y_LPARAM (screen coordinates, may be negative).
-        int x = (short)((uint)lParam & 0xFFFFu);
-        int y = (short)((uint)lParam >> 16);
-
-        bool left   = x < wr.left   + NativeMethods.ResizeBorderSize;
-        bool right  = x >= wr.right  - NativeMethods.ResizeBorderSize;
-        bool top    = y < wr.top    + NativeMethods.ResizeBorderSize;
-        bool bottom = y >= wr.bottom - NativeMethods.ResizeBorderSize;
-
-        if (top    && left)  return (IntPtr)NativeMethods.HTTOPLEFT;
-        if (top    && right) return (IntPtr)NativeMethods.HTTOPRIGHT;
-        if (bottom && left)  return (IntPtr)NativeMethods.HTBOTTOMLEFT;
-        if (bottom && right) return (IntPtr)NativeMethods.HTBOTTOMRIGHT;
-        if (top)             return (IntPtr)NativeMethods.HTTOP;
-        if (bottom)          return (IntPtr)NativeMethods.HTBOTTOM;
-        if (left)            return (IntPtr)NativeMethods.HTLEFT;
-        if (right)           return (IntPtr)NativeMethods.HTRIGHT;
-
-        return (IntPtr)NativeMethods.HTCLIENT;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

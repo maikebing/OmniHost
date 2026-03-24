@@ -1,4 +1,5 @@
 using OmniWebHost;
+using OmniWebHost.Windows;
 using OmniWebHost.WebView2;
 
 // ── Configure and build the application ──────────────────────────────────────
@@ -12,6 +13,8 @@ var app = OmniApp.CreateBuilder(args)
         o.Width           = 1100;
         o.Height          = 720;
         o.EnableDevTools  = true;
+        o.WindowStyle     = OmniWindowStyle.Frameless;
+        o.ScrollBarMode   = OmniScrollBarMode.Auto;
     })
     .UseAdapter(new WebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
@@ -29,7 +32,7 @@ sealed class SampleApp : IDesktopApp
     {
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        // Register a handler callable from JavaScript via window.omni.invoke('greet', name)
+        // Register a handler callable from JavaScript via omni.invoke('greet', name)
         adapter.JsBridge.RegisterHandler("greet", async payload =>
         {
             // payload is a JSON string; strip quotes for a plain string argument
@@ -72,4 +75,3 @@ sealed class SampleApp : IDesktopApp
         return Task.CompletedTask;
     }
 }
-

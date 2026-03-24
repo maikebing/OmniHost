@@ -13,6 +13,7 @@ title: Getting Started
 
 ```bash
 dotnet add package OmniWebHost
+dotnet add package OmniWebHost.Windows
 dotnet add package OmniWebHost.WebView2
 ```
 
@@ -22,6 +23,7 @@ Create a console project targeting `net8.0-windows`:
 
 ```csharp
 using OmniWebHost;
+using OmniWebHost.Windows;
 using OmniWebHost.WebView2;
 
 var app = OmniApp.CreateBuilder(args)
@@ -58,6 +60,14 @@ sealed class MyApp : IDesktopApp
 }
 ```
 
+`OmniWebHost.WebView2` registers the configured custom scheme when creating the underlying `CoreWebView2Environment`, so `app://localhost/index.html` can be used directly as the startup page.
+
+Optional host-level behaviour can be configured through `OmniWebHostOptions`, including:
+
+- `WindowStyle = OmniWindowStyle.Frameless` for custom HTML/CSS chrome
+- `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
+- `ScrollBarCustomCss = "..."`
+
 Add `wwwroot/index.html`:
 
 ```html
@@ -69,14 +79,14 @@ Add `wwwroot/index.html`:
     <script>
       document.getElementById('btn').onclick = async () => {
         document.getElementById('out').textContent =
-          await window.omni.invoke('greet', 'World');
+          await omni.invoke('greet', 'World');
       };
     </script>
   </body>
 </html>
 ```
 
-The `window.omni` bridge helper is automatically injected by OmniWebHost before each page loads — no extra script tag required.
+The `omni` bridge helper is automatically injected by OmniWebHost before each page loads, so no extra script tag is required.
 
 ## Win32Runtime and STA
 
@@ -90,4 +100,3 @@ It requires no WinForms or WPF dependency, making the application compatible wit
 - [Architecture](architecture.md) — understand how the pieces fit together
 - [JS Bridge](js-bridge.md) — full bridge API reference
 - [Adapters](adapters.md) — choose or implement a browser adapter
-
