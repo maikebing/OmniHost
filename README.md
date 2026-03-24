@@ -71,7 +71,7 @@ var app = OmniApp.CreateBuilder(args)
         o.StartUrl        = "app://localhost/index.html";
     })
     .UseAdapter(new WebView2AdapterFactory())
-    .UseRuntime(new WinFormsRuntime())
+    .UseRuntime(new Win32Runtime())   // AOT-compatible — no WinForms/WPF
     .UseDesktopApp(new MyApp())
     .Build();
 

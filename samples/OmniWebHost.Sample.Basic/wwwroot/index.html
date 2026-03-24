@@ -87,13 +87,43 @@
       font-size: .8rem;
       font-weight: 600;
     }
+
+    /* ── Frameless window controls (only visible in Frameless mode) ───────── */
+    .win-btn {
+      padding: .4rem .9rem;
+      font-size: .85rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    .win-btn.min  { background: #374151; color: #e2e8f0; }
+    .win-btn.max  { background: #374151; color: #e2e8f0; }
+    .win-btn.cls  { background: #dc2626; color: #fff;    }
+    .win-btn:hover.min, .win-btn:hover.max { background: #4b5563; }
+    .win-btn:hover.cls { background: #ef4444; }
   </style>
 </head>
 <body>
   <header>
     <h1>🌐 OmniWebHost</h1>
-    <p>Basic Sample — WebView2 running inside a native WinForms window</p>
+    <p>Basic Sample — WebView2 hosted in a raw Win32 window (AOT-compatible)</p>
   </header>
+
+  <!-- Window controls (only useful when WindowStyle = Frameless) -->
+  <div class="card">
+    <h2>Window Controls · <code>window.omni.window.*</code></h2>
+    <p style="color:#94a3b8;font-size:.875rem;margin-bottom:.75rem">
+      Available when <code>OmniWindowStyle.Frameless</code> is set. In Normal mode the
+      OS title bar provides these controls.
+    </p>
+    <div class="row">
+      <button class="win-btn min" id="btn-win-min">🗕 Minimize</button>
+      <button class="win-btn max" id="btn-win-max">🗗 Maximize / Restore</button>
+      <button class="win-btn cls" id="btn-win-cls">✕ Close</button>
+    </div>
+  </div>
 
   <!-- Greet handler -->
   <div class="card">
@@ -122,6 +152,14 @@
   </div>
 
   <script>
+    // ── Window controls ────────────────────────────────────────────────────────
+    document.getElementById('btn-win-min').addEventListener('click', () =>
+      window.omni.invoke('window.minimize'));
+    document.getElementById('btn-win-max').addEventListener('click', () =>
+      window.omni.invoke('window.maximize'));
+    document.getElementById('btn-win-cls').addEventListener('click', () =>
+      window.omni.invoke('window.close'));
+
     // ── Greet ──────────────────────────────────────────────────────────────────
     document.getElementById('btn-greet').addEventListener('click', async () => {
       const name = document.getElementById('name-input').value || 'World';

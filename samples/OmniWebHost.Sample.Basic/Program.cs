@@ -14,7 +14,7 @@ var app = OmniApp.CreateBuilder(args)
         o.EnableDevTools  = true;
     })
     .UseAdapter(new WebView2AdapterFactory())
-    .UseRuntime(new WinFormsRuntime())
+    .UseRuntime(new Win32Runtime())
     .UseDesktopApp(new SampleApp())
     .Build();
 

@@ -43,5 +43,13 @@ public class OmniWebHostOptions
 
     /// <summary>Additional adapter-specific settings as key-value pairs.</summary>
     public Dictionary<string, string> AdapterSettings { get; set; } = new();
+
+    /// <summary>
+    /// Visual style of the native host window chrome.
+    /// Defaults to <see cref="OmniWindowStyle.Normal"/> (standard OS title bar).
+    /// Set to <see cref="OmniWindowStyle.Frameless"/> to remove the system title bar
+    /// and implement a fully custom HTML/CSS chrome.
+    /// </summary>
+    public OmniWindowStyle WindowStyle { get; set; } = OmniWindowStyle.Normal;
 }
 

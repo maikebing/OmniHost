@@ -36,7 +36,7 @@ var app = OmniApp.CreateBuilder(args)
         o.EnableDevTools  = true;
     })
     .UseAdapter(new WebView2AdapterFactory())
-    .UseRuntime(new WinFormsRuntime())
+    .UseRuntime(new Win32Runtime())       // AOT-compatible, no WinForms/WPF
     .UseDesktopApp(new MyApp())
     .Build();
 
@@ -80,9 +80,12 @@ Add `wwwroot/index.html`:
 
 The `window.omni` bridge helper is automatically injected by OmniWebHost before each page loads — no extra script tag required.
 
-## WinFormsRuntime and STA
+## Win32Runtime and STA
 
-`WinFormsRuntime` automatically ensures it runs on a WinForms STA thread, so you can call `await app.RunAsync()` from a standard async `Main` without any extra threading setup.
+`Win32Runtime` always creates a dedicated STA thread internally, so you can call
+`await app.RunAsync()` from a standard async `Main` without any extra threading setup.
+It requires no WinForms or WPF dependency, making the application compatible with
+.NET AOT (Ahead-of-Time) compilation.
 
 ## Next Steps
 
