@@ -9,6 +9,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Windows window-style presets now include:
+  - `OmniWindowStyle.DwmBlurGlass`
+  - `OmniWindowStyle.VsCode`
+- The WebView host bridge now exposes multi-value window style tokens to the page root via:
+  - `--omni-window-style`
+  - `data-omni-window-style`
 - Native window lifecycle events are now pushed back through the JS bridge:
   - `window.stateChanged`
   - `window.closing`
@@ -34,6 +40,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `samples/OmniHost.Sample.CrossPlatform`, a sample entry that auto-selects Windows/WebView2 or Linux/GTK+WebKitGTK at startup.
 - Linux GTK host windows now register richer `omni.window.*` bridge handlers, including drag start, better state synchronization, and best-effort system-menu support.
 - `OmniHost.WebKitGtk` now serves `app://` assets through a native WebKitGTK URI scheme handler instead of relying on `file://` URL translation.
+
+### Changed
+
+- `DwmBlurGlass` support in `OmniHost.Windows` is implemented as an app-local, public-DWM-API preset.
+  It does not embed the external `DWMBlurGlass` project's system-wide hook/injection pipeline.
 
 ### Changed - breaking
 

@@ -6,6 +6,8 @@ internal sealed class DefaultWin32WindowFrameStrategyFactory : IWin32WindowFrame
         => windowStyle switch
         {
             OmniWindowStyle.Frameless => new DwmCustomFrameStrategy(),
+            OmniWindowStyle.DwmBlurGlass => new DwmBlurGlassFrameStrategy(),
+            OmniWindowStyle.VsCode => new VsCodeFrameStrategy(),
             _ => new SystemFrameStrategy(),
         };
 }

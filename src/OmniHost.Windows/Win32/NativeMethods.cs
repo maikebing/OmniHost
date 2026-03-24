@@ -43,6 +43,7 @@ internal static class NativeMethods
     internal const uint WM_DESTROY       = 0x0002u;
     internal const uint WM_SIZE          = 0x0005u;
     internal const uint WM_ACTIVATE      = 0x0006u;
+    internal const uint WM_THEMECHANGED  = 0x031Au;
     internal const uint WM_NULL          = 0x0000u;
     internal const uint WM_CLOSE         = 0x0010u;
     internal const uint WM_ERASEBKGND   = 0x0014u;
@@ -98,6 +99,27 @@ internal static class NativeMethods
     internal const uint TPM_LEFTALIGN     = 0x0000u;
     internal const uint TPM_RETURNCMD     = 0x0100u;
     internal const uint TPM_RIGHTBUTTON   = 0x0002u;
+
+    // DWM window attributes
+    internal const uint DWMWA_USE_IMMERSIVE_DARK_MODE = 20u;
+    internal const uint DWMWA_WINDOW_CORNER_PREFERENCE = 33u;
+    internal const uint DWMWA_BORDER_COLOR = 34u;
+    internal const uint DWMWA_CAPTION_COLOR = 35u;
+    internal const uint DWMWA_TEXT_COLOR = 36u;
+    internal const uint DWMWA_SYSTEMBACKDROP_TYPE = 38u;
+
+    // DWM corner preferences
+    internal const uint DWMWCP_DEFAULT = 0u;
+    internal const uint DWMWCP_DONOTROUND = 1u;
+    internal const uint DWMWCP_ROUND = 2u;
+    internal const uint DWMWCP_ROUNDSMALL = 3u;
+
+    // DWM system backdrop types
+    internal const int DWMSBT_AUTO = 0;
+    internal const int DWMSBT_NONE = 1;
+    internal const int DWMSBT_MAINWINDOW = 2;
+    internal const int DWMSBT_TRANSIENTWINDOW = 3;
+    internal const int DWMSBT_TABBEDWINDOW = 4;
 
     // ── Structs ───────────────────────────────────────────────────────────────
 
@@ -275,4 +297,18 @@ internal static class NativeMethods
         IntPtr wParam,
         IntPtr lParam,
         out IntPtr plResult);
+
+    [DllImport("dwmapi.dll", ExactSpelling = true)]
+    internal static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        uint dwAttribute,
+        ref int pvAttribute,
+        uint cbAttribute);
+
+    [DllImport("dwmapi.dll", ExactSpelling = true)]
+    internal static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        uint dwAttribute,
+        ref uint pvAttribute,
+        uint cbAttribute);
 }

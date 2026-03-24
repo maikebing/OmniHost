@@ -19,7 +19,7 @@ var builder = OmniApp.CreateBuilder(args)
         options.Height = 720;
         options.EnableDevTools = true;
         options.WindowStyle = OperatingSystem.IsWindows()
-            ? OmniWindowStyle.Frameless
+            ? OmniWindowStyle.VsCode
             : OmniWindowStyle.Normal;
         options.ScrollBarMode = OmniScrollBarMode.Auto;
     })

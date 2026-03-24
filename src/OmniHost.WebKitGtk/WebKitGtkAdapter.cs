@@ -210,7 +210,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
 
     private static string BuildWindowChromeSupportScript(OmniHostOptions options)
     {
-        var windowStyle = options.WindowStyle == OmniWindowStyle.Frameless ? "frameless" : "normal";
+        var windowStyle = options.WindowStyle.ToCssToken();
 
         return $$"""
             (function () {
@@ -228,6 +228,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
 
                 function getDragRegion(target) {
                     if (!target || isInteractive(target)) return null;
+                    if (style !== 'frameless' && style !== 'vscode') return null;
                     return target.closest('[omni-drag]');
                 }
 

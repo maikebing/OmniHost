@@ -201,7 +201,7 @@ public sealed class WebView2Adapter : IWebViewAdapter
 
     private static Task InjectWindowChromeSupportAsync(CoreWebView2 core, OmniHostOptions options)
     {
-        var windowStyle = options.WindowStyle == OmniWindowStyle.Frameless ? "frameless" : "normal";
+        var windowStyle = options.WindowStyle.ToCssToken();
         var script = $$"""
             (function () {
                 var style = {{System.Text.Json.JsonSerializer.Serialize(windowStyle)}};
@@ -218,6 +218,7 @@ public sealed class WebView2Adapter : IWebViewAdapter
 
                 function getDragRegion(target) {
                     if (!target || isInteractive(target)) return null;
+                    if (style !== 'frameless' && style !== 'vscode') return null;
                     return target.closest('[omni-drag]');
                 }
 

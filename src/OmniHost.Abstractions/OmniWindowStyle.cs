@@ -25,4 +25,25 @@ public enum OmniWindowStyle
     /// </para>
     /// </summary>
     Frameless = 1,
+
+    /// <summary>
+    /// Standard system title bar and border with a DWM blur-glass inspired backdrop
+    /// when the host OS exposes a supported public API.
+    /// <para>
+    /// On newer Windows 11 builds this maps to the system backdrop APIs. On older
+    /// or unsupported Windows versions it gracefully falls back to
+    /// <see cref="Normal"/>.
+    /// </para>
+    /// </summary>
+    DwmBlurGlass = 2,
+
+    /// <summary>
+    /// A frameless, custom-chrome window intended for a VS Code-like HTML title bar.
+    /// <para>
+    /// This keeps the raw Win32 resize + DWM custom-frame behaviour used by
+    /// <see cref="Frameless"/>, while also applying a darker Windows backdrop when
+    /// available so the native frame better matches editor-style shells.
+    /// </para>
+    /// </summary>
+    VsCode = 3,
 }

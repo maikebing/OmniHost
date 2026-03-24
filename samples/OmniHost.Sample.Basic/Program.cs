@@ -13,7 +13,7 @@ var app = OmniApp.CreateBuilder(args)
         options.Width = 1100;
         options.Height = 720;
         options.EnableDevTools = true;
-        options.WindowStyle = OmniWindowStyle.Frameless;
+        options.WindowStyle = OmniWindowStyle.VsCode;
         options.ScrollBarMode = OmniScrollBarMode.Auto;
     })
     .AddWindow("secondary", options =>
@@ -22,7 +22,7 @@ var app = OmniApp.CreateBuilder(args)
         options.StartUrl = "app://localhost/secondary.html?window=secondary";
         options.Width = 520;
         options.Height = 440;
-        options.WindowStyle = OmniWindowStyle.Normal;
+        options.WindowStyle = OmniWindowStyle.DwmBlurGlass;
     })
     .UseAdapter(new WebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())

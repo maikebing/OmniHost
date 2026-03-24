@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.WinForms</RootNamespace>
+    <AssemblyName>OmniHost.WinForms</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>Optional Windows Forms runtime and host-window implementation for OmniHost.</Description>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniHost.Abstractions\OmniHost.Abstractions.csproj" />
+    <ProjectReference Include="..\OmniHost.Windows\OmniHost.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

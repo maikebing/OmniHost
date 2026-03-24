@@ -67,6 +67,8 @@ await app.RunAsync();
 `OmniHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without extra WebView2 setup in your app code.
 
 For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
+Windows currently exposes `Normal`, `Frameless`, `DwmBlurGlass`, and `VsCode` style presets through that same option.
+The `DwmBlurGlass` preset intentionally stays on public DWM APIs, so it is a safe app-local approximation of the external `DWMBlurGlass` project rather than a system-wide hook/injection clone.
 You can declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
 For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
 That manager can open windows, close windows, activate windows, look up live contexts by id, and post or broadcast host events.

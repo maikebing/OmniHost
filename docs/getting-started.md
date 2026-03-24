@@ -72,6 +72,8 @@ sealed class MyApp : IDesktopApp
 Optional host-level behaviour can be configured through `OmniHostOptions`, including:
 
 - `WindowStyle = OmniWindowStyle.Frameless` for custom HTML/CSS chrome
+- `WindowStyle = OmniWindowStyle.DwmBlurGlass` for a system-frame window with a Windows 11 DWM backdrop when available
+- `WindowStyle = OmniWindowStyle.VsCode` for a frameless VS Code-like shell that still uses `omni-drag` and `omni.window.*`
 - `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
 - `ScrollBarCustomCss = "..."`
 - `AddWindow("secondary", options => { ... })` for extra startup windows on runtimes that support `IMultiWindowDesktopRuntime`

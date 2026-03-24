@@ -62,6 +62,9 @@ public class OmniHostOptions
     /// Defaults to <see cref="OmniWindowStyle.Normal"/> (standard OS title bar).
     /// Set to <see cref="OmniWindowStyle.Frameless"/> to remove the system title bar
     /// and implement a fully custom HTML/CSS chrome.
+    /// Additional Windows-oriented presets such as <see cref="OmniWindowStyle.DwmBlurGlass"/>
+    /// and <see cref="OmniWindowStyle.VsCode"/> are runtime-specific and fall back gracefully
+    /// when the selected host runtime does not expose equivalent native capabilities.
     /// </summary>
     public OmniWindowStyle WindowStyle { get; set; } = OmniWindowStyle.Normal;
 
