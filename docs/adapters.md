@@ -16,6 +16,8 @@ Each adapter wraps a concrete browser engine and exposes a uniform `IWebViewAdap
 | `OmniHost.WKWebView` | WKWebView | macOS | 📋 Planned |
 | `OmniHost.WebKitGtk` | WebKitGTK | Linux | 📋 Planned |
 
+The Linux host/runtime foundation has started in `OmniHost.Gtk`, but a Linux browser adapter is still pending before that path becomes end-to-end usable.
+
 ## Using an Adapter
 
 Pass the adapter factory to the builder:

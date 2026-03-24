@@ -78,6 +78,26 @@ sealed class SampleApp : IWindowAwareDesktopApp
             return Task.FromResult(payload);
         });
 
+        window.Adapter.JsBridge.RegisterHandler("windows.contextById", payload =>
+        {
+            var windowId = payload.Trim('"');
+            var context = window.WindowManager.GetWindowContext(windowId);
+
+            var response = JsonSerializer.Serialize(context is null
+                ? null
+                : new
+                {
+                    id = context.WindowId,
+                    isMain = context.IsMainWindow,
+                    title = context.Options.Title,
+                    startUrl = context.Options.StartUrl,
+                    adapterId = context.Adapter.AdapterId,
+                    openWindowCount = context.WindowManager.OpenWindowCount,
+                });
+
+            return Task.FromResult(response);
+        });
+
         if (window.IsMainWindow)
         {
             window.Adapter.JsBridge.RegisterHandler("window.openToolWindow", _ =>
@@ -110,6 +130,24 @@ sealed class SampleApp : IWindowAwareDesktopApp
                     windowId,
                     closed
                 }));
+            });
+
+            window.Adapter.JsBridge.RegisterHandler("window.activateById", payload =>
+            {
+                var windowId = payload.Trim('"');
+                var activated = window.WindowManager.TryActivateWindow(windowId);
+
+                return Task.FromResult(JsonSerializer.Serialize(new
+                {
+                    windowId,
+                    activated
+                }));
+            });
+
+            window.Adapter.JsBridge.RegisterHandler("windows.broadcastNotice", payload =>
+            {
+                var message = payload.Trim('"');
+                return BroadcastNoticeAsync(window, message);
             });
         }
 
@@ -157,5 +195,23 @@ sealed class SampleApp : IWindowAwareDesktopApp
         };
 
         return new OmniWindowDefinition("inspector", options);
+    }
+
+    private static async Task<string> BroadcastNoticeAsync(OmniWindowContext window, string message)
+    {
+        var payload = JsonSerializer.Serialize(new
+        {
+            message,
+            from = window.WindowId,
+            time = DateTime.Now.ToString("HH:mm:ss")
+        });
+
+        var recipients = await window.WindowManager.BroadcastEventAsync("host.notice", payload);
+
+        return JsonSerializer.Serialize(new
+        {
+            recipients,
+            message
+        });
     }
 }

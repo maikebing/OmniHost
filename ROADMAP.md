@@ -122,7 +122,7 @@ src/
 
   OmniHost.AppKit/           (future)
   OmniHost.WKWebView/        (future)
-  OmniHost.Gtk/              (future)
+  OmniHost.Gtk/
   OmniHost.WebKitGtk/        (future)
   OmniHost.Cef/              (future)
 ```
@@ -164,7 +164,7 @@ src/
 #### Phase 5 — Bring the pattern to other platforms
 
 - [ ] Add AppKit-based runtime/window hosting for macOS.
-- [ ] Add GTK-based runtime/window hosting for Linux.
+- [x] Add GTK-based runtime/window hosting for Linux.
 - [ ] Add `WKWebView` and `WebKitGtk` adapters against the new host-surface model.
 - [ ] Explore SDL only after a browser adapter proves a clean embedding path.
 
@@ -227,6 +227,7 @@ Recommended execution order:
 
 ## 0.4.x — Linux (WebKitGTK)
 
+- [x] `OmniHost.Gtk` runtime/window host package
 - [ ] `OmniHost.WebKitGtk` adapter
 - [ ] GTK window integration
 

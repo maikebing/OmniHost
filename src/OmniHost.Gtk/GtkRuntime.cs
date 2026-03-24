@@ -1,54 +1,46 @@
 using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 using OmniHost.Core;
+using OmniHost.Gtk.Gtk;
 
-namespace OmniHost.Windows;
+namespace OmniHost.Gtk;
 
 /// <summary>
-/// AOT-compatible <see cref="IDesktopRuntime"/> that creates raw Win32 windows
-/// and runs native message loops without any WinForms or WPF dependency.
+/// First-pass Linux runtime backed by GTK host windows.
 /// </summary>
 /// <remarks>
-/// Each host window runs on its own dedicated STA thread so that COM-backed
-/// browser adapters such as WebView2 always execute in a compatible apartment.
+/// This package currently focuses on native window hosting and runtime/window-manager
+/// flow. A Linux browser adapter still needs to be paired with it for an end-to-end path.
 /// </remarks>
-public sealed class Win32Runtime : IMultiWindowDesktopRuntime
+public sealed class GtkRuntime : IMultiWindowDesktopRuntime
 {
     private readonly IHostWindowFactory _windowFactory;
     private readonly HostWindowCoordinator _coordinator;
     private readonly object _executionGate = new();
     private RuntimeExecution? _currentExecution;
 
-    /// <summary>
-    /// Creates a Win32 runtime using the default raw Win32 host window implementation.
-    /// </summary>
-    public Win32Runtime()
-        : this(new Win32HostWindowFactory())
+    public GtkRuntime()
+        : this(new GtkHostWindowFactory())
     {
     }
 
-    /// <summary>
-    /// Creates a Win32 runtime with a custom host-window factory.
-    /// </summary>
-    public Win32Runtime(IHostWindowFactory windowFactory)
+    public GtkRuntime(IHostWindowFactory windowFactory)
         : this(windowFactory, new HostWindowCoordinator())
     {
     }
 
-    internal Win32Runtime(IHostWindowFactory windowFactory, HostWindowCoordinator coordinator)
+    internal GtkRuntime(IHostWindowFactory windowFactory, HostWindowCoordinator coordinator)
     {
         _windowFactory = windowFactory ?? throw new ArgumentNullException(nameof(windowFactory));
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
     }
 
-    /// <inheritdoc/>
     public void Run(
         OmniHostOptions options,
         IWebViewAdapterFactory adapterFactory,
         IDesktopApp? desktopApp)
         => Run(options, Array.Empty<OmniWindowDefinition>(), adapterFactory, desktopApp);
 
-    /// <inheritdoc/>
     public void Run(
         OmniHostOptions options,
         IReadOnlyList<OmniWindowDefinition> additionalWindows,
@@ -63,7 +55,7 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
         lock (_executionGate)
         {
             if (_currentExecution is not null)
-                throw new InvalidOperationException("This Win32Runtime instance is already running.");
+                throw new InvalidOperationException("This GtkRuntime instance is already running.");
 
             execution = new RuntimeExecution(this, adapterFactory, desktopApp);
             _currentExecution = execution;
@@ -71,15 +63,7 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
 
         try
         {
-            execution.OpenMainWindow(options);
-
-            foreach (var window in additionalWindows)
-            {
-                ArgumentNullException.ThrowIfNull(window);
-                execution.OpenAdditionalWindow(window);
-            }
-
-            execution.WaitForCompletion();
+            execution.Run(options, additionalWindows);
             execution.ThrowIfFailed();
         }
         finally
@@ -94,9 +78,7 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
         }
     }
 
-    private void RunWindow(
-        HostWindowDefinition definition,
-        RuntimeExecution execution)
+    private void RunWindow(HostWindowDefinition definition, RuntimeExecution execution)
     {
         if (definition.IsMainWindow)
         {
@@ -118,46 +100,17 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
             execution.DesktopApp);
     }
 
-    private Thread CreateWindowThread(
-        HostWindowDefinition definition,
-        RuntimeExecution execution)
-    {
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                RunWindow(definition, execution);
-            }
-            catch (Exception ex)
-            {
-                execution.RecordFailure(ex);
-            }
-            finally
-            {
-                execution.OnWindowThreadCompleted(definition.WindowId);
-            }
-        });
-
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Name = definition.IsMainWindow
-            ? "OmniHost-UI"
-            : $"OmniHost-UI-{definition.WindowId}";
-
-        return thread;
-    }
-
     private sealed class RuntimeExecution
     {
-        private readonly Win32Runtime _runtime;
-        private readonly ManualResetEventSlim _allWindowsClosed = new(initialState: true);
+        private readonly GtkRuntime _runtime;
         private readonly ConcurrentQueue<Exception> _failures = new();
         private readonly object _gate = new();
         private readonly HashSet<string> _scheduledWindowIds = new(StringComparer.Ordinal);
-        private bool _isCompleted;
-        private int _activeWindowThreads;
+        private SynchronizationContext? _uiContext;
+        private bool _completed;
 
         public RuntimeExecution(
-            Win32Runtime runtime,
+            GtkRuntime runtime,
             IWebViewAdapterFactory adapterFactory,
             IDesktopApp? desktopApp)
         {
@@ -173,16 +126,38 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
 
         public IOmniWindowManager WindowManager { get; }
 
-        public void OpenMainWindow(OmniHostOptions options)
-            => OpenWindow(new HostWindowDefinition("main", options, IsMainWindow: true));
-
-        public void OpenAdditionalWindow(OmniWindowDefinition window)
+        public void Run(OmniHostOptions options, IReadOnlyList<OmniWindowDefinition> additionalWindows)
         {
-            ArgumentNullException.ThrowIfNull(window);
-            OpenWindow(new HostWindowDefinition(window.WindowId, window.Options, IsMainWindow: false));
-        }
+            Exception? capturedException = null;
 
-        public void WaitForCompletion() => _allWindowsClosed.Wait();
+            var uiThread = new Thread(() =>
+            {
+                try
+                {
+                    _uiContext = new GtkSynchronizationContext();
+                    SynchronizationContext.SetSynchronizationContext(_uiContext);
+
+                    foreach (var window in additionalWindows)
+                    {
+                        ArgumentNullException.ThrowIfNull(window);
+                        ScheduleWindowOpen(new HostWindowDefinition(window.WindowId, window.Options, IsMainWindow: false));
+                    }
+
+                    OpenWindowCore(new HostWindowDefinition("main", options, IsMainWindow: true));
+                }
+                catch (Exception ex)
+                {
+                    capturedException = ex;
+                }
+            });
+
+            uiThread.Name = "OmniHost-Gtk-UI";
+            uiThread.Start();
+            uiThread.Join();
+
+            if (capturedException is not null)
+                ExceptionDispatchInfo.Capture(capturedException).Throw();
+        }
 
         public void ThrowIfFailed()
         {
@@ -193,29 +168,15 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
             if (failures.Length == 1)
                 ExceptionDispatchInfo.Capture(failures[0]).Throw();
 
-            throw new AggregateException("One or more OmniHost windows failed.", failures);
+            throw new AggregateException("One or more OmniHost GTK windows failed.", failures);
         }
 
         public void Complete()
         {
             lock (_gate)
             {
-                _isCompleted = true;
+                _completed = true;
             }
-        }
-
-        public void RecordFailure(Exception exception)
-            => _failures.Enqueue(exception);
-
-        public void OnWindowThreadCompleted(string windowId)
-        {
-            lock (_gate)
-            {
-                _scheduledWindowIds.Remove(windowId);
-            }
-
-            if (Interlocked.Decrement(ref _activeWindowThreads) == 0)
-                _allWindowsClosed.Set();
         }
 
         public int OpenWindowCount => _runtime._coordinator.OpenWindowCount;
@@ -250,30 +211,59 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
             CancellationToken cancellationToken = default)
             => _runtime._coordinator.BroadcastEventAsync(eventName, jsonPayload, cancellationToken);
 
-        private void OpenWindow(HostWindowDefinition definition)
+        public void OpenWindow(OmniWindowDefinition window)
+        {
+            ArgumentNullException.ThrowIfNull(window);
+            ScheduleWindowOpen(new HostWindowDefinition(window.WindowId, window.Options, IsMainWindow: false));
+        }
+
+        private void ScheduleWindowOpen(HostWindowDefinition definition)
         {
             lock (_gate)
             {
-                if (_isCompleted)
-                    throw new InvalidOperationException("The runtime is no longer accepting new windows.");
+                if (_completed)
+                    throw new InvalidOperationException("The GTK runtime is no longer accepting new windows.");
 
                 if (!_scheduledWindowIds.Add(definition.WindowId))
                     throw new InvalidOperationException(
                         $"A host window with id '{definition.WindowId}' is already scheduled or running.");
-
-                if (Interlocked.Increment(ref _activeWindowThreads) == 1)
-                    _allWindowsClosed.Reset();
             }
 
+            if (_uiContext is null)
+                throw new InvalidOperationException("The GTK UI thread is not ready yet.");
+
+            _uiContext.Post(static state =>
+            {
+                var (execution, scheduledDefinition) = ((RuntimeExecution, HostWindowDefinition))state!;
+
+                try
+                {
+                    execution.OpenWindowCore(scheduledDefinition);
+                }
+                catch (Exception ex)
+                {
+                    execution._failures.Enqueue(ex);
+
+                    lock (execution._gate)
+                    {
+                        execution._scheduledWindowIds.Remove(scheduledDefinition.WindowId);
+                    }
+                }
+            }, (this, definition));
+        }
+
+        private void OpenWindowCore(HostWindowDefinition definition)
+        {
             try
             {
-                var thread = _runtime.CreateWindowThread(definition, this);
-                thread.Start();
+                _runtime.RunWindow(definition, this);
             }
-            catch
+            finally
             {
-                OnWindowThreadCompleted(definition.WindowId);
-                throw;
+                lock (_gate)
+                {
+                    _scheduledWindowIds.Remove(definition.WindowId);
+                }
             }
         }
     }
@@ -301,7 +291,7 @@ public sealed class Win32Runtime : IMultiWindowDesktopRuntime
             => _execution.GetWindowContext(windowId);
 
         public void OpenWindow(OmniWindowDefinition window)
-            => _execution.OpenAdditionalWindow(window);
+            => _execution.OpenWindow(window);
 
         public bool TryCloseWindow(string windowId)
             => _execution.TryCloseWindow(windowId);

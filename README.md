@@ -46,6 +46,7 @@ The first preview ships the **Windows / WebView2** path:
 - `OmniHost.Hosting` — `IHostBuilder` extensions
 - `OmniHost.Windows` — Windows runtime + raw Win32 host window
 - `OmniHost.WebView2` — WebView2 adapter placeholder
+- `OmniHost.Gtk` — first-pass Linux GTK runtime + host window package
 
 CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later milestones — see [ROADMAP.md](ROADMAP.md).
 
@@ -53,7 +54,7 @@ CEF, WKWebView (macOS) and WebKitGTK (Linux) adapters are planned for later mile
 
 ## Current Status
 
-> **0.1.0-preview.3** — Windows/WebView2 path is functional, with the Win32 runtime, JS bridge, custom frame strategies, and the `OmniHost` rename in place.
+> **0.1.0-preview.3** — Windows/WebView2 is the functional end-to-end path today. `OmniHost.Gtk` now provides an experimental first-pass Linux host runtime, pending a Linux browser adapter.
 
 ---
 
@@ -84,6 +85,7 @@ await app.RunAsync();
 For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
 You can also declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
 For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
+That manager can now open windows, close windows, activate windows, look up live contexts by id, and post or broadcast host events.
 
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 

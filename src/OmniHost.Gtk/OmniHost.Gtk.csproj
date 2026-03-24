@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.Gtk</RootNamespace>
+    <AssemblyName>OmniHost.Gtk</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>First-pass GTK runtime and host-window implementation for OmniHost on Linux.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniHost.Abstractions\OmniHost.Abstractions.csproj" />
+    <ProjectReference Include="..\OmniHost.Core\OmniHost.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -38,6 +38,7 @@ OmniHost is structured as a set of layered packages with clear boundaries:
 | `OmniHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
 | `OmniHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
 | `OmniHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
+| `OmniHost.Gtk` | First-pass Linux GTK runtime and host-window implementation. |
 | `OmniHost.WebView2` | Microsoft WebView2 adapter (Windows). |
 
 ## Key Interfaces
@@ -85,7 +86,8 @@ and current window manager.
 
 ### `IOmniWindowManager`
 Runtime window-management API for enumerating open windows, opening additional windows,
-and requesting close on a specific window.
+activating or closing a specific window, retrieving live window contexts by id,
+and posting or broadcasting host events.
 
 ### `BrowserCapabilities`
 Describes what a given adapter can do (DevTools, custom schemes, JS bridge, host-surface support, …).

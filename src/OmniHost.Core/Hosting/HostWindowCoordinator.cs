@@ -43,6 +43,17 @@ public sealed class HostWindowCoordinator
             .ToArray();
 
     /// <summary>
+    /// Returns the live window context for a tracked window when one is available.
+    /// </summary>
+    public OmniWindowContext? GetWindowContext(string windowId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(windowId);
+        return _windows.TryGetValue(windowId, out var trackedWindow)
+            ? trackedWindow.Context
+            : null;
+    }
+
+    /// <summary>
     /// Creates the main adapter and host window, then runs the window until it closes.
     /// </summary>
     public void RunMainWindow(
@@ -103,6 +114,7 @@ public sealed class HostWindowCoordinator
             adapter.AdapterId,
             definition.IsMainWindow,
             windowOptions,
+            windowContext,
             window);
 
         if (!_windows.TryAdd(definition.WindowId, trackedWindow))
@@ -148,11 +160,72 @@ public sealed class HostWindowCoordinator
         return true;
     }
 
+    /// <summary>
+    /// Requests that a tracked window become active.
+    /// </summary>
+    public bool TryRequestActivate(string windowId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(windowId);
+
+        if (!_windows.TryGetValue(windowId, out var trackedWindow))
+            return false;
+
+        trackedWindow.Window.RequestActivate();
+        return true;
+    }
+
+    /// <summary>
+    /// Posts a host event to one tracked window.
+    /// </summary>
+    public async Task<bool> PostEventAsync(
+        string windowId,
+        string eventName,
+        string jsonPayload,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(windowId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        ArgumentNullException.ThrowIfNull(jsonPayload);
+
+        if (!_windows.TryGetValue(windowId, out var trackedWindow))
+            return false;
+
+        cancellationToken.ThrowIfCancellationRequested();
+        await trackedWindow.Context.Adapter.JsBridge.PostMessageAsync(eventName, jsonPayload);
+        return true;
+    }
+
+    /// <summary>
+    /// Broadcasts a host event to all currently tracked windows.
+    /// </summary>
+    public async Task<int> BroadcastEventAsync(
+        string eventName,
+        string jsonPayload,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        ArgumentNullException.ThrowIfNull(jsonPayload);
+
+        var contexts = _windows.Values
+            .OrderBy(static window => window.WindowId, StringComparer.Ordinal)
+            .Select(static window => window.Context)
+            .ToArray();
+
+        foreach (var context in contexts)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await context.Adapter.JsBridge.PostMessageAsync(eventName, jsonPayload);
+        }
+
+        return contexts.Length;
+    }
+
     private sealed record TrackedHostWindow(
         string WindowId,
         string AdapterId,
         bool IsMainWindow,
         OmniHostOptions Options,
+        OmniWindowContext Context,
         IHostWindow Window);
 
     private static void EnsureSurfaceCompatibility(IWebViewAdapter adapter, IHostWindowFactory windowFactory)

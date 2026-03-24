@@ -44,6 +44,7 @@ title: Roadmap
 
 ## 0.4.x — Linux
 
+- `OmniHost.Gtk` first-pass runtime/window host package
 - `OmniHost.WebKitGtk` adapter
 
 ## 0.5.x — CEF (cross-platform)

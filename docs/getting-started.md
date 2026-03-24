@@ -68,7 +68,7 @@ Optional host-level behaviour can be configured through `OmniHostOptions`, inclu
 - `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
 - `ScrollBarCustomCss = "..."`
 - `AddWindow("secondary", options => { ... })` for extra startup windows on runtimes that support `IMultiWindowDesktopRuntime`
-- `IWindowAwareDesktopApp` + `IOmniWindowManager` for runtime window operations such as dynamic open/close
+- `IWindowAwareDesktopApp` + `IOmniWindowManager` for runtime window operations such as dynamic open/close, activation, context lookup, and event broadcast
 
 Add `wwwroot/index.html`:
 

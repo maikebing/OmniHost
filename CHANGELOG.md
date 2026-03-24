@@ -21,8 +21,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `IWindowAwareDesktopApp`
   - `OmniWindowContext`
   - `IOmniWindowManager`
+- Richer window manager operations via:
+  - `GetWindowContext(windowId)`
+  - `TryActivateWindow(windowId)`
+  - `PostEventAsync(...)`
+  - `BroadcastEventAsync(...)`
+- `OmniHost.Gtk`, an experimental first-pass Linux GTK runtime/window-host package.
 - The basic sample now shows a live window lifecycle event stream.
-- The basic sample now launches a secondary startup window and can open/close an inspector window at runtime.
+- The basic sample now launches a secondary startup window and can open/close an inspector window at runtime, activate windows by id, inspect live window context, and broadcast host events.
 
 ### Changed - breaking
 

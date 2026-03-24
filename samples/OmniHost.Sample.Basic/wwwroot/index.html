@@ -253,7 +253,10 @@
         <button id="btn-open-inspector">Open Inspector</button>
         <button id="btn-close-secondary">Close Secondary</button>
         <button id="btn-close-inspector">Close Inspector</button>
+        <button id="btn-activate-secondary">Activate Secondary</button>
         <button id="btn-list-windows">Refresh Window List</button>
+        <button id="btn-context-secondary">Get Secondary Context</button>
+        <button id="btn-broadcast">Broadcast Notice</button>
       </div>
       <div class="output" id="window-manager-output">Window manager activity will appear here...</div>
     </div>
@@ -330,8 +333,14 @@
       invokeWindowManager('window.closeById', 'secondary'));
     document.getElementById('btn-close-inspector').addEventListener('click', () =>
       invokeWindowManager('window.closeById', 'inspector'));
+    document.getElementById('btn-activate-secondary').addEventListener('click', () =>
+      invokeWindowManager('window.activateById', 'secondary'));
     document.getElementById('btn-list-windows').addEventListener('click', () =>
       invokeWindowManager('windows.list'));
+    document.getElementById('btn-context-secondary').addEventListener('click', () =>
+      invokeWindowManager('windows.contextById', 'secondary'));
+    document.getElementById('btn-broadcast').addEventListener('click', () =>
+      invokeWindowManager('windows.broadcastNotice', 'Hello from the main window'));
 
     document.getElementById('btn-greet').addEventListener('click', async () => {
       const name = document.getElementById('name-input').value || 'World';
@@ -398,6 +407,7 @@
     omni.on('window.stateChanged', (data) => appendWindowEvent('window.stateChanged', data));
     omni.on('window.closing', (data) => appendWindowEvent('window.closing', data));
     omni.on('window.closed', (data) => appendWindowEvent('window.closed', data));
+    omni.on('host.notice', (data) => appendWindowEvent('host.notice', data));
   </script>
 </body>
 </html>

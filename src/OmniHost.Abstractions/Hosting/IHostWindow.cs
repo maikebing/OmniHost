@@ -19,4 +19,9 @@ public interface IHostWindow
     /// Requests that the host window begin its normal close flow.
     /// </summary>
     void RequestClose();
+
+    /// <summary>
+    /// Requests that the host window become the active foreground window.
+    /// </summary>
+    void RequestActivate();
 }

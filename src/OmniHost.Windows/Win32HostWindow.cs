@@ -111,6 +111,20 @@ internal sealed class Win32HostWindow : IHostWindow
         NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
     }
 
+    /// <inheritdoc/>
+    public void RequestActivate()
+    {
+        if (_hwnd == IntPtr.Zero)
+            return;
+
+        if (NativeMethods.IsIconic(_hwnd))
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_RESTORE);
+        else
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_SHOW);
+
+        NativeMethods.SetForegroundWindow(_hwnd);
+    }
+
     // ── Window class registration ─────────────────────────────────────────────
 
     private static void RegisterWindowClass()

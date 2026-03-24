@@ -166,6 +166,7 @@
     omni.on('window.stateChanged', (data) => appendEvent('window.stateChanged', data));
     omni.on('window.closing', (data) => appendEvent('window.closing', data));
     omni.on('window.closed', (data) => appendEvent('window.closed', data));
+    omni.on('host.notice', (data) => appendEvent('host.notice', data));
   </script>
 </body>
 </html>
