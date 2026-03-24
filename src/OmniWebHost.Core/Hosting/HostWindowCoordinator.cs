@@ -30,6 +30,18 @@ public sealed class HostWindowCoordinator
         => _windows.Keys.OrderBy(static id => id, StringComparer.Ordinal).ToArray();
 
     /// <summary>
+    /// Returns a snapshot of currently tracked open windows.
+    /// </summary>
+    public IReadOnlyCollection<HostWindowSnapshot> GetOpenWindows()
+        => _windows.Values
+            .OrderBy(static window => window.WindowId, StringComparer.Ordinal)
+            .Select(static window => new HostWindowSnapshot(
+                window.WindowId,
+                window.AdapterId,
+                window.IsMainWindow))
+            .ToArray();
+
+    /// <summary>
     /// Creates the main adapter and host window, then runs the window until it closes.
     /// </summary>
     public void RunMainWindow(
@@ -37,19 +49,61 @@ public sealed class HostWindowCoordinator
         IWebViewAdapterFactory adapterFactory,
         IHostWindowFactory windowFactory,
         IDesktopApp? desktopApp)
+        => RunWindow(
+            new HostWindowDefinition(MainWindowKey, options, IsMainWindow: true),
+            adapterFactory,
+            windowFactory,
+            desktopApp);
+
+    /// <summary>
+    /// Creates and runs an additional non-main host window.
+    /// This is intentionally internal until the public multi-window API is designed.
+    /// </summary>
+    internal void RunAdditionalWindow(
+        string windowId,
+        OmniWebHostOptions options,
+        IWebViewAdapterFactory adapterFactory,
+        IHostWindowFactory windowFactory,
+        IDesktopApp? desktopApp)
+        => RunWindow(
+            new HostWindowDefinition(windowId, options, IsMainWindow: false),
+            adapterFactory,
+            windowFactory,
+            desktopApp);
+
+    private void RunWindow(
+        HostWindowDefinition definition,
+        IWebViewAdapterFactory adapterFactory,
+        IHostWindowFactory windowFactory,
+        IDesktopApp? desktopApp)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(definition.Options);
         ArgumentNullException.ThrowIfNull(adapterFactory);
         ArgumentNullException.ThrowIfNull(windowFactory);
 
         var adapter = adapterFactory.Create();
-        var window = windowFactory.Create(options, adapter, desktopApp);
-        var trackedWindow = new TrackedHostWindow(MainWindowKey, adapter.AdapterId, IsMainWindow: true, window);
+        var window = windowFactory.Create(definition.Options, adapter, desktopApp);
+        var trackedWindow = new TrackedHostWindow(
+            definition.WindowId,
+            adapter.AdapterId,
+            definition.IsMainWindow,
+            window);
 
-        if (!_windows.TryAdd(MainWindowKey, trackedWindow))
-            throw new InvalidOperationException("The main host window is already running.");
+        if (!_windows.TryAdd(definition.WindowId, trackedWindow))
+            throw new InvalidOperationException(
+                $"A host window with id '{definition.WindowId}' is already running.");
 
-        _mainWindowId = MainWindowKey;
+        if (definition.IsMainWindow)
+        {
+            if (_mainWindowId is not null && !string.Equals(_mainWindowId, definition.WindowId, StringComparison.Ordinal))
+            {
+                _windows.TryRemove(definition.WindowId, out _);
+                throw new InvalidOperationException("The main host window is already running.");
+            }
+
+            _mainWindowId = definition.WindowId;
+        }
 
         try
         {
@@ -57,9 +111,10 @@ public sealed class HostWindowCoordinator
         }
         finally
         {
-            _windows.TryRemove(MainWindowKey, out _);
+            _windows.TryRemove(definition.WindowId, out _);
 
-            if (string.Equals(_mainWindowId, MainWindowKey, StringComparison.Ordinal))
+            if (definition.IsMainWindow
+                && string.Equals(_mainWindowId, definition.WindowId, StringComparison.Ordinal))
                 _mainWindowId = null;
         }
     }

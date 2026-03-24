@@ -29,6 +29,7 @@ title: Roadmap
   - introduced `IWindowFrameStrategy` and split `Normal` / `Frameless` into concrete frame strategies
   - added a dedicated Windows frame-strategy factory so more frame variants can be introduced without changing `Win32HostWindow`
   - introduced a first `HostWindowCoordinator` in `OmniWebHost.Core` while keeping single-window startup as the default path
+  - added internal window definitions and tracked-window snapshots so future auxiliary windows can reuse the same coordinator pipeline
 - Naming strategy:
   - product short name: `Omni`
   - planned technical family after refactor: `OmniHost.*`

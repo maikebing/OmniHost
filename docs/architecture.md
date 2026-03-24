@@ -74,7 +74,8 @@ Describes what a given adapter can do (DevTools, custom schemes, JS bridge, …)
 ### `HostWindowCoordinator`
 Current single-window coordinator in `OmniWebHost.Core` that creates the adapter,
 creates the host window, tracks the current open-window set, and runs that window
-through the selected runtime.
+through the selected runtime. It now also owns internal window definitions and
+window snapshots so future auxiliary windows can reuse the same coordination path.
 
 ## Entry Point Flow
 

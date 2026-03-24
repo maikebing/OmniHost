@@ -157,6 +157,7 @@ src/
 - [ ] Add capability matching between adapters and host-surface kinds.
 - [x] Add a host-window coordinator for multi-window lifecycle management.
 - [x] Keep single-window app startup as the default path.
+- [x] Add internal window definitions and tracked-window snapshots so future main/auxiliary windows can share one coordination pipeline.
 
 #### Phase 5 — Bring the pattern to other platforms
 
