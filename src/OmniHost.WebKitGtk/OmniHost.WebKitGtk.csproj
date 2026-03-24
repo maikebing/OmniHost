@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.WebKitGtk</RootNamespace>
+    <AssemblyName>OmniHost.WebKitGtk</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>Experimental WebKitGTK browser adapter for OmniHost.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniHost.Abstractions\OmniHost.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
