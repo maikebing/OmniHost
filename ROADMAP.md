@@ -148,15 +148,15 @@ src/
 
 - [x] Introduce `IWindowFrameStrategy`.
 - [x] Map current `OmniWindowStyle.Normal` and `Frameless` onto concrete frame strategies.
-- [ ] Add room for Windows-specific variants beyond the current two modes.
+- [x] Add room for Windows-specific variants beyond the current two modes.
 - [x] Keep current defaults intact while the strategy layer is introduced.
 
 #### Phase 4 — Prepare multi-window and surface-aware adapters
 
 - [x] Move adapter initialization from raw `nint hostHandle` to `HostSurfaceDescriptor`.
 - [ ] Add capability matching between adapters and host-surface kinds.
-- [ ] Add a host-window coordinator for multi-window lifecycle management.
-- [ ] Keep single-window app startup as the default path.
+- [x] Add a host-window coordinator for multi-window lifecycle management.
+- [x] Keep single-window app startup as the default path.
 
 #### Phase 5 — Bring the pattern to other platforms
 

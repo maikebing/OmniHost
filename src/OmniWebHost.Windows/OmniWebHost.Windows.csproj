@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OmniWebHost.Abstractions\OmniWebHost.Abstractions.csproj" />
+    <ProjectReference Include="..\OmniWebHost.Core\OmniWebHost.Core.csproj" />
   </ItemGroup>
 
 </Project>

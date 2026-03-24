@@ -1,4 +1,5 @@
 using System.Runtime.ExceptionServices;
+using OmniWebHost.Core;
 
 namespace OmniWebHost.Windows;
 
@@ -14,6 +15,7 @@ namespace OmniWebHost.Windows;
 public sealed class Win32Runtime : IDesktopRuntime
 {
     private readonly IHostWindowFactory _windowFactory;
+    private readonly HostWindowCoordinator _coordinator;
 
     /// <summary>
     /// Creates a Win32 runtime using the default raw Win32 host window implementation.
@@ -27,8 +29,14 @@ public sealed class Win32Runtime : IDesktopRuntime
     /// Creates a Win32 runtime with a custom host-window factory.
     /// </summary>
     public Win32Runtime(IHostWindowFactory windowFactory)
+        : this(windowFactory, new HostWindowCoordinator())
+    {
+    }
+
+    internal Win32Runtime(IHostWindowFactory windowFactory, HostWindowCoordinator coordinator)
     {
         _windowFactory = windowFactory ?? throw new ArgumentNullException(nameof(windowFactory));
+        _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
     }
 
     /// <inheritdoc/>
@@ -43,9 +51,7 @@ public sealed class Win32Runtime : IDesktopRuntime
         {
             try
             {
-                var adapter = adapterFactory.Create();
-                var window  = _windowFactory.Create(options, adapter, desktopApp);
-                window.Run();
+                _coordinator.RunMainWindow(options, adapterFactory, _windowFactory, desktopApp);
             }
             catch (Exception ex)
             {

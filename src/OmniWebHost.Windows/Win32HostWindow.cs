@@ -40,12 +40,16 @@ internal sealed class Win32HostWindow : IHostWindow
 
     // ── Construction ──────────────────────────────────────────────────────────
 
-    internal Win32HostWindow(OmniWebHostOptions options, IWebViewAdapter adapter, IDesktopApp? desktopApp)
+    internal Win32HostWindow(
+        OmniWebHostOptions options,
+        IWebViewAdapter adapter,
+        IDesktopApp? desktopApp,
+        IWin32WindowFrameStrategy frameStrategy)
     {
         _options    = options;
         _adapter    = adapter;
         _desktopApp = desktopApp;
-        _frameStrategy = CreateFrameStrategy(options.WindowStyle);
+        _frameStrategy = frameStrategy ?? throw new ArgumentNullException(nameof(frameStrategy));
         _surfaceWidth = options.Width;
         _surfaceHeight = options.Height;
     }
@@ -389,13 +393,6 @@ internal sealed class Win32HostWindow : IHostWindow
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static IWin32WindowFrameStrategy CreateFrameStrategy(OmniWindowStyle windowStyle)
-        => windowStyle switch
-        {
-            OmniWindowStyle.Frameless => new DwmCustomFrameStrategy(),
-            _ => new SystemFrameStrategy(),
-        };
 
     private static void TrySetDpiAwareness()
     {

@@ -34,7 +34,7 @@ OmniWebHost is structured as a set of layered packages with clear boundaries:
 | Package | Role |
 |---------|------|
 | `OmniWebHost.Abstractions` | Public interfaces and model types. No implementation code. |
-| `OmniWebHost.Core` | Builder pattern, `OmniWebHostApp` runner, null implementations. |
+| `OmniWebHost.Core` | Builder pattern, `OmniWebHostApp` runner, and host-window coordination. |
 | `OmniWebHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
 | `OmniWebHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
 | `OmniWebHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
@@ -71,6 +71,11 @@ Optional lifecycle callbacks (`OnStartAsync`, `OnClosingAsync`) for the host app
 ### `BrowserCapabilities`
 Describes what a given adapter can do (DevTools, custom schemes, JS bridge, …).
 
+### `HostWindowCoordinator`
+Current single-window coordinator in `OmniWebHost.Core` that creates the adapter,
+creates the host window, tracks the current open-window set, and runs that window
+through the selected runtime.
+
 ## Entry Point Flow
 
 ```
@@ -81,7 +86,7 @@ OmniApp.CreateBuilder(args)
     .Build()
   → IOmniWebHostApp
     .RunAsync()
-      → create host window
+      → HostWindowCoordinator.RunMainWindow(...)
       → IWebViewAdapterFactory.Create()
       → IHostWindowFactory.Create(...)
       → IWebViewAdapter.InitializeAsync(surface, options)
