@@ -15,14 +15,31 @@ internal sealed class WebView2JsBridge : IJsBridge
             var _pending = {};
             window.chrome.webview.addEventListener('message', function (e) {
                 var msg;
-                try { msg = JSON.parse(e.data); } catch { return; }
+                try {
+                    msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+                } catch {
+                    return;
+                }
+                if (!msg || typeof msg !== 'object') return;
                 if (msg.type === 'response' && _pending[msg.id]) {
                     var cb = _pending[msg.id];
                     delete _pending[msg.id];
-                    cb.resolve(msg.result);
+                    if (msg.ok === false) {
+                        cb.reject(new Error(msg.error || 'omni invoke failed: ' + msg.id));
+                        return;
+                    }
+                    var result = msg.result;
+                    if (typeof result === 'string') {
+                        try { result = JSON.parse(result); } catch { }
+                    }
+                    cb.resolve(result);
                 } else if (msg.type === 'event') {
                     var detail;
-                    try { detail = JSON.parse(msg.data); } catch { detail = msg.data; }
+                    if (typeof msg.data === 'string') {
+                        try { detail = JSON.parse(msg.data); } catch { detail = msg.data; }
+                    } else {
+                        detail = msg.data;
+                    }
                     window.dispatchEvent(new CustomEvent('omni:' + msg.name, { detail: detail }));
                 }
             });
@@ -86,7 +103,7 @@ internal sealed class WebView2JsBridge : IJsBridge
             name = eventName,
             data = jsonPayload
         });
-        _core!.PostWebMessageAsJson(envelope);
+        _core!.PostWebMessageAsString(envelope);
         await Task.CompletedTask;
     }
 
@@ -102,21 +119,48 @@ internal sealed class WebView2JsBridge : IJsBridge
         try { msg = JsonSerializer.Deserialize<BridgeInvokeMessage>(raw); }
         catch { return; }
 
-        if (msg is null || msg.Type != "invoke" || msg.Handler is null || msg.Id is null) return;
+        if (msg is null || msg.Type != "invoke" || msg.Handler is null || msg.Id is null)
+            return;
 
-        if (!_handlers.TryGetValue(msg.Handler, out var handler)) return;
-
-        string result;
-        try { result = await handler(msg.Data ?? "null"); }
-        catch (Exception ex) { result = JsonSerializer.Serialize(new { error = ex.Message }); }
-
-        var response = JsonSerializer.Serialize(new
+        if (!_handlers.TryGetValue(msg.Handler, out var handler))
         {
-            type = "response",
-            id = msg.Id,
-            result
-        });
-        _core?.PostWebMessageAsJson(response);
+            PostResponse(new
+            {
+                type = "response",
+                id = msg.Id,
+                ok = false,
+                error = $"No JS bridge handler named '{msg.Handler}' is registered."
+            });
+            return;
+        }
+
+        try
+        {
+            var result = await handler(msg.Data ?? "null");
+            PostResponse(new
+            {
+                type = "response",
+                id = msg.Id,
+                ok = true,
+                result
+            });
+        }
+        catch (Exception ex)
+        {
+            PostResponse(new
+            {
+                type = "response",
+                id = msg.Id,
+                ok = false,
+                error = ex.Message
+            });
+        }
+    }
+
+    private void PostResponse(object payload)
+    {
+        var response = JsonSerializer.Serialize(payload);
+        _core?.PostWebMessageAsString(response);
     }
 
     // ── Internal message model ───────────────────────────────────────────────
@@ -129,4 +173,3 @@ internal sealed class WebView2JsBridge : IJsBridge
         public string? Data { get; init; }
     }
 }
-

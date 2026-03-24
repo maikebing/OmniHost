@@ -58,6 +58,8 @@ sealed class MyApp : IDesktopApp
 }
 ```
 
+`OmniWebHost.WebView2` registers the configured custom scheme when creating the underlying `CoreWebView2Environment`, so `app://localhost/index.html` can be used directly as the startup page.
+
 Add `wwwroot/index.html`:
 
 ```html
@@ -87,4 +89,3 @@ The `window.omni` bridge helper is automatically injected by OmniWebHost before 
 - [Architecture](architecture.md) — understand how the pieces fit together
 - [JS Bridge](js-bridge.md) — full bridge API reference
 - [Adapters](adapters.md) — choose or implement a browser adapter
-

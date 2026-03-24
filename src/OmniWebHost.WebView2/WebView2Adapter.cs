@@ -34,9 +34,11 @@ public sealed class WebView2Adapter : IWebViewAdapter
         var userDataFolder = options.UserDataFolder
             ?? Path.Combine(Path.GetTempPath(), "OmniWebHost", SanitizeFolderName(options.Title));
 
+        var environmentOptions = CreateEnvironmentOptions(options);
         _environment = await CoreWebView2Environment.CreateAsync(
             browserExecutableFolder: null,
-            userDataFolder: userDataFolder);
+            userDataFolder: userDataFolder,
+            options: environmentOptions);
 
         _controller = await _environment.CreateCoreWebView2ControllerAsync(hostHandle);
         _controller.IsVisible = true;
@@ -97,6 +99,29 @@ public sealed class WebView2Adapter : IWebViewAdapter
         core.AddWebResourceRequestedFilter(filter, CoreWebView2WebResourceContext.All);
         core.WebResourceRequested += (_, args) =>
             HandleWebResourceRequest(args, options.ContentRootPath!, _environment!);
+    }
+
+    private static CoreWebView2EnvironmentOptions CreateEnvironmentOptions(OmniWebHostOptions options)
+    {
+        // WebView2 only raises WebResourceRequested for custom schemes that were
+        // registered when the environment was created. On this package version,
+        // CustomSchemeRegistrations is exposed as a read-only property and may be
+        // null until the constructor overload populates it, so pass the list here.
+        var customScheme = new CoreWebView2CustomSchemeRegistration(options.CustomScheme)
+        {
+            HasAuthorityComponent = true,
+            TreatAsSecure = true,
+        };
+
+        // Allow requests originating from the hosted app pages themselves.
+        customScheme.AllowedOrigins.Add($"{options.CustomScheme}://*");
+
+        return new CoreWebView2EnvironmentOptions(
+            additionalBrowserArguments: null,
+            language: null,
+            targetCompatibleBrowserVersion: null,
+            allowSingleSignOnUsingOSPrimaryAccount: false,
+            customSchemeRegistrations: [customScheme]);
     }
 
     private static void HandleWebResourceRequest(
@@ -164,4 +189,3 @@ public sealed class WebView2Adapter : IWebViewAdapter
         return new string(name.Select(c => Array.IndexOf(invalid, c) >= 0 ? '_' : c).ToArray());
     }
 }
-

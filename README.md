@@ -78,6 +78,8 @@ var app = OmniApp.CreateBuilder(args)
 await app.RunAsync();
 ```
 
+`OmniWebHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
+
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 
 ```js
