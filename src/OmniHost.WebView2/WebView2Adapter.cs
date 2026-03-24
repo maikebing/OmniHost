@@ -81,6 +81,7 @@ public sealed class WebView2Adapter : IWebViewAdapter
         // Initialise the JS bridge (injects helper script).
         await _bridge.InitializeAsync(core);
         await InjectWindowChromeSupportAsync(core, options);
+        await InjectBuiltInTitleBarAsync(core, options);
         await InjectHostCssAsync(core, options);
     }
 
@@ -258,6 +259,15 @@ public sealed class WebView2Adapter : IWebViewAdapter
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static Task InjectBuiltInTitleBarAsync(CoreWebView2 core, OmniHostOptions options)
+    {
+        var script = BuiltInTitleBarScriptBuilder.Build(options);
+        if (string.IsNullOrWhiteSpace(script))
+            return Task.CompletedTask;
+
+        return core.AddScriptToExecuteOnDocumentCreatedAsync(script);
+    }
 
     private static Task InjectHostCssAsync(CoreWebView2 core, OmniHostOptions options)
     {

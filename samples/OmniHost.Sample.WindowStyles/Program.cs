@@ -25,6 +25,7 @@ var app = OmniApp.CreateBuilder(args)
         options.Height = 820;
         options.EnableDevTools = true;
         options.WindowStyle = OmniWindowStyle.VsCode;
+        options.BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.VsCode;
     })
     .AddWindow("office-startup", options =>
     {
@@ -35,7 +36,8 @@ var app = OmniApp.CreateBuilder(args)
         options.Width = 1320;
         options.Height = 860;
         options.EnableDevTools = true;
-        options.WindowStyle = OmniWindowStyle.DwmBlurGlass;
+        options.WindowStyle = OmniWindowStyle.Frameless;
+        options.BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.Office;
     })
     .UseAdapter(new WebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
@@ -66,6 +68,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
                 windowId = window.WindowId,
                 title = window.Options.Title,
                 style = window.Options.WindowStyle.ToCssToken(),
+                builtInTitleBar = window.Options.BuiltInTitleBarStyle.ToCssToken(),
                 styleName = window.Options.WindowStyle.ToString(),
                 isMainWindow = window.IsMainWindow,
                 adapter = window.Adapter.AdapterId,
@@ -77,6 +80,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
                     id = snapshot.WindowId,
                     title = snapshot.Options.Title,
                     style = snapshot.Options.WindowStyle.ToCssToken(),
+                    builtInTitleBar = snapshot.Options.BuiltInTitleBarStyle.ToCssToken(),
                 }),
                 time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             });
@@ -92,6 +96,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
                     id = snapshot.WindowId,
                     title = snapshot.Options.Title,
                     style = snapshot.Options.WindowStyle.ToCssToken(),
+                    builtInTitleBar = snapshot.Options.BuiltInTitleBarStyle.ToCssToken(),
                     startUrl = snapshot.Options.StartUrl,
                 }));
 
@@ -134,6 +139,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
                     {
                         windowId = window.WindowId,
                         style = window.Options.WindowStyle.ToCssToken(),
+                        builtInTitleBar = window.Options.BuiltInTitleBarStyle.ToCssToken(),
                         time = DateTime.Now.ToString("HH:mm:ss"),
                     });
 
@@ -159,6 +165,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
             opened = true,
             windowId = definition.WindowId,
             style = definition.Options.WindowStyle.ToCssToken(),
+            builtInTitleBar = definition.Options.BuiltInTitleBarStyle.ToCssToken(),
             startUrl = definition.Options.StartUrl,
         }));
     }
@@ -169,6 +176,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
             "Blur Glass",
             "blur-glass.html",
             OmniWindowStyle.DwmBlurGlass,
+            OmniBuiltInTitleBarStyle.None,
             Interlocked.Increment(ref _blurGlassCount),
             width: 1220,
             height: 820);
@@ -179,6 +187,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
             "Tabbed",
             "tabbed.html",
             OmniWindowStyle.VsCode,
+            OmniBuiltInTitleBarStyle.None,
             Interlocked.Increment(ref _tabbedCount),
             width: 1220,
             height: 820);
@@ -189,6 +198,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
             "VSCode",
             "vscode.html",
             OmniWindowStyle.VsCode,
+            OmniBuiltInTitleBarStyle.VsCode,
             Interlocked.Increment(ref _vscodeCount),
             width: 1320,
             height: 860);
@@ -198,7 +208,8 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
             "office",
             "Office",
             "office.html",
-            OmniWindowStyle.DwmBlurGlass,
+            OmniWindowStyle.Frameless,
+            OmniBuiltInTitleBarStyle.Office,
             Interlocked.Increment(ref _officeCount),
             width: 1360,
             height: 900);
@@ -208,6 +219,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
         string titlePrefix,
         string page,
         OmniWindowStyle windowStyle,
+        OmniBuiltInTitleBarStyle builtInTitleBarStyle,
         int index,
         int width,
         int height)
@@ -223,6 +235,7 @@ sealed class WindowStylesApp : IWindowAwareDesktopApp
             Height = height,
             EnableDevTools = true,
             WindowStyle = windowStyle,
+            BuiltInTitleBarStyle = builtInTitleBarStyle,
         };
 
         return new OmniWindowDefinition(windowId, options);
