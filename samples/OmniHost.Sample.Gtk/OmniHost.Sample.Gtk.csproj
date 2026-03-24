@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.Sample.Gtk</RootNamespace>
+    <AssemblyName>OmniHost.Sample.Gtk</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\OmniHost.Sample.Basic\wwwroot\**\*">
+      <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OmniHost\OmniHost.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.Gtk\OmniHost.Gtk.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.WebKitGtk\OmniHost.WebKitGtk.csproj" />
+  </ItemGroup>
+
+</Project>

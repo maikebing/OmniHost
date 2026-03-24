@@ -123,7 +123,7 @@ src/
   OmniHost.AppKit/           (future)
   OmniHost.WKWebView/        (future)
   OmniHost.Gtk/
-  OmniHost.WebKitGtk/
+  OmniHost.WebKitGtk/        (future)
   OmniHost.Cef/              (future)
 ```
 
@@ -165,8 +165,7 @@ src/
 
 - [ ] Add AppKit-based runtime/window hosting for macOS.
 - [x] Add GTK-based runtime/window hosting for Linux.
-- [ ] Add `WKWebView` adapter against the new host-surface model.
-- [x] Add a first experimental `WebKitGtk` adapter against the GTK host-surface model.
+- [ ] Add `WKWebView` and `WebKitGtk` adapters against the new host-surface model.
 - [ ] Explore SDL only after a browser adapter proves a clean embedding path.
 
 ### First-pass rules
@@ -229,9 +228,8 @@ Recommended execution order:
 ## 0.4.x — Linux (WebKitGTK)
 
 - [x] `OmniHost.Gtk` runtime/window host package
-- [x] `OmniHost.WebKitGtk` adapter
-- [x] GTK window integration
-- [ ] Harden the Linux stack from experimental preview to a fully validated path
+- [ ] `OmniHost.WebKitGtk` adapter
+- [ ] GTK window integration
 
 ## 0.5.x — CEF (cross-platform alternative)
 
@@ -243,3 +241,16 @@ Recommended execution order:
 - Enhanced DI integration
 - Hot-reload support for web assets
 - Packaged distribution helpers (MSIX, AppImage, DMG)
+- DWMBlurGlass  https://github.com/Maplespe/DWMBlurGlass
+- 原生界面带标题栏带边框
+- VSCode UI
+- WinForms 
+
+## Samples
+
+- Asp.Net MVC Core 
+- Blazor
+- Asp.Net Core Spa+ Vue3
+- 第三方网站  
+- Asp.Net AOT 
+- 其他脚本语言写后端API

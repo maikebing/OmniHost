@@ -30,6 +30,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `OmniHost.WebKitGtk`, an experimental first-pass Linux WebKitGTK adapter package.
 - The basic sample now shows a live window lifecycle event stream.
 - The basic sample now launches a secondary startup window and can open/close an inspector window at runtime, activate windows by id, inspect live window context, and broadcast host events.
+- Added `samples/OmniHost.Sample.Gtk`, a Linux-oriented sample that pairs `OmniHost.Gtk` with `OmniHost.WebKitGtk` and reuses the shared demo web assets.
 - Linux GTK host windows now register basic `omni.window.*` bridge handlers for close/minimize/maximize parity and can pair with the new WebKitGTK adapter.
 
 ### Changed - breaking

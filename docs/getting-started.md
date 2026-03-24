@@ -9,6 +9,8 @@ title: Getting Started
 - [.NET 8 SDK](https://dotnet.microsoft.com/download) or later
 - Windows 10/11 with [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) installed
 
+For the experimental Linux path, you also need GTK 3 and WebKitGTK runtime libraries installed on the machine.
+
 ## Installation
 
 ```bash
@@ -19,6 +21,7 @@ dotnet add package OmniHost.WebView2
 
 For the experimental Linux path, use `OmniHost.Gtk` with `OmniHost.WebKitGtk`.
 The getting-started sample below still focuses on the more complete Windows/WebView2 path.
+You can also inspect `samples/OmniHost.Sample.Gtk` for the current Linux example.
 
 ## Your First App
 

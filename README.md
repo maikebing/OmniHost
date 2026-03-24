@@ -72,6 +72,7 @@ For dynamic window operations during runtime, use `IWindowAwareDesktopApp` toget
 That manager can open windows, close windows, activate windows, look up live contexts by id, and post or broadcast host events.
 
 On Linux, use `OmniHost.Gtk` with `OmniHost.WebKitGtk` for the experimental path. The current v1 flow targets GTK widget hosting and translates `app://localhost/...` startup URLs to local `file://...` navigation.
+There is now a matching sample project at `samples/OmniHost.Sample.Gtk`.
 
 In `wwwroot/index.html` the bridge helper is auto-injected, so no script tag is required:
 
