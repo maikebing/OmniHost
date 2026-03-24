@@ -19,6 +19,12 @@ dotnet add package OmniHost.Windows
 dotnet add package OmniHost.WebView2
 ```
 
+If you prefer a Windows Forms host window instead of the raw Win32 host, also add:
+
+```bash
+dotnet add package OmniHost.WinForms
+```
+
 For the experimental Linux path, use `OmniHost.Gtk` with `OmniHost.WebKitGtk`.
 The getting-started sample below still focuses on the more complete Windows/WebView2 path.
 You can also inspect `samples/OmniHost.Sample.Gtk` for the current Linux example.
@@ -116,6 +122,10 @@ When you need the window id, the runtime window manager, or per-window option sn
 `await app.RunAsync()` from a standard async `Main` without any extra threading setup.
 It requires no WinForms or WPF dependency, making the application compatible with
 .NET AOT (Ahead-of-Time) compilation.
+
+If you want a Windows Forms host window instead, swap in `new WinFormsRuntime()` from
+`OmniHost.WinForms`. That path lives in a separate package so the default Win32 runtime
+can stay lean and AOT-friendly.
 
 ## Next Steps
 

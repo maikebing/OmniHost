@@ -12,6 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Windows window-style presets now include:
   - `OmniWindowStyle.DwmBlurGlass`
   - `OmniWindowStyle.VsCode`
+- `OmniHost.WinForms`, an optional Windows Forms runtime and host-window package.
 - The WebView host bridge now exposes multi-value window style tokens to the page root via:
   - `--omni-window-style`
   - `data-omni-window-style`

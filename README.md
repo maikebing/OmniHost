@@ -31,6 +31,7 @@ The first preview ships the Windows/WebView2 path, plus an experimental first-pa
 - `OmniHost` - top-level `OmniApp` entry point
 - `OmniHost.Hosting` - `IHostBuilder` extensions
 - `OmniHost.Windows` - Windows runtime and raw Win32 host window
+- `OmniHost.WinForms` - optional Windows Forms runtime and host window
 - `OmniHost.WebView2` - WebView2 adapter
 - `OmniHost.Gtk` - first-pass Linux GTK runtime and host window package
 - `OmniHost.WebKitGtk` - experimental WebKitGTK adapter for Linux
@@ -69,6 +70,7 @@ await app.RunAsync();
 For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
 Windows currently exposes `Normal`, `Frameless`, `DwmBlurGlass`, and `VsCode` style presets through that same option.
 The `DwmBlurGlass` preset intentionally stays on public DWM APIs, so it is a safe app-local approximation of the external `DWMBlurGlass` project rather than a system-wide hook/injection clone.
+If you specifically want a Windows Forms host surface instead of the raw Win32 host, use the optional `OmniHost.WinForms` package and `new WinFormsRuntime()`.
 You can declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
 For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
 That manager can open windows, close windows, activate windows, look up live contexts by id, and post or broadcast host events.

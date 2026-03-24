@@ -13,6 +13,7 @@ OmniHost is structured as layered packages with clear boundaries:
 - `OmniHost.Core` coordinates runtime, windows, and adapters
 - `OmniHost.Abstractions` defines the shared contracts
 - platform runtimes such as `OmniHost.Windows` and `OmniHost.Gtk` provide native window hosting
+- optional runtimes such as `OmniHost.WinForms` can offer alternate host-window implementations on the same OS
 - browser adapters such as `OmniHost.WebView2` and `OmniHost.WebKitGtk` provide engine-specific embedding
 
 ## Packages
@@ -24,6 +25,7 @@ OmniHost is structured as layered packages with clear boundaries:
 | `OmniHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
 | `OmniHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
 | `OmniHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
+| `OmniHost.WinForms` | Optional Windows Forms runtime and host-window implementation. |
 | `OmniHost.Gtk` | First-pass Linux GTK runtime and host-window implementation. |
 | `OmniHost.WebView2` | Microsoft WebView2 adapter for Windows. |
 | `OmniHost.WebKitGtk` | Experimental WebKitGTK adapter for Linux / GTK widget host surfaces. |
@@ -91,7 +93,7 @@ Coordinator in `OmniHost.Core` that creates adapters, creates host windows, trac
 It owns internal window definitions and window snapshots so both main and auxiliary windows can reuse the same coordination path.
 Each tracked window keeps its own cloned `OmniHostOptions` instance.
 
-The same coordinator/runtime/window-manager pattern now backs both `OmniHost.Windows` and the first-pass `OmniHost.Gtk` runtime so cross-platform host implementations can share one multi-window control flow.
+The same coordinator/runtime/window-manager pattern now backs `OmniHost.Windows`, `OmniHost.WinForms`, and the first-pass `OmniHost.Gtk` runtime so cross-platform host implementations can share one multi-window control flow.
 
 ## Entry Point Flow
 
