@@ -25,4 +25,4 @@ OmniHost lets you build desktop applications powered by a web front-end, using w
 ## Current Status
 
 Version **0.1.0-preview.3**: Windows/WebView2 is still the most complete path and remains the first-class MVP target.
-Linux now also has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` path with GTK host-window support, WebKitGTK embedding, and bridge wiring in place.
+Linux now also has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` path with GTK host-window support, WebKitGTK embedding, bridge wiring, and native `app://` custom-scheme asset loading in place.

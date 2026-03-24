@@ -22,6 +22,7 @@ dotnet add package OmniHost.WebView2
 For the experimental Linux path, use `OmniHost.Gtk` with `OmniHost.WebKitGtk`.
 The getting-started sample below still focuses on the more complete Windows/WebView2 path.
 You can also inspect `samples/OmniHost.Sample.Gtk` for the current Linux example.
+If you want one sample entry that chooses the platform-specific runtime/adapter automatically, inspect `samples/OmniHost.Sample.CrossPlatform`.
 
 ## Your First App
 

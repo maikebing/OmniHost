@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net8.0-windows</TargetFrameworks>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.Sample.CrossPlatform</RootNamespace>
+    <AssemblyName>OmniHost.Sample.CrossPlatform</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\OmniHost.Sample.Basic\wwwroot\**\*">
+      <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OmniHost\OmniHost.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.Gtk\OmniHost.Gtk.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.WebKitGtk\OmniHost.WebKitGtk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <ProjectReference Include="..\..\src\OmniHost.Windows\OmniHost.Windows.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.WebView2\OmniHost.WebView2.csproj" />
+  </ItemGroup>
+
+</Project>

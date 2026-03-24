@@ -7,6 +7,7 @@ internal static class WebKitGtkNative
     private const string WebKitLib = "webkit2gtk";
     private const string JavaScriptCoreLib = "javascriptcoregtk";
     private const string GtkLib = "gtk-3";
+    private const string GioLib = "gio-2.0";
     private const string GLibLib = "glib-2.0";
     private const string GObjectLib = "gobject-2.0";
 
@@ -25,6 +26,8 @@ internal static class WebKitGtkNative
     internal delegate void GAsyncReadyCallback(IntPtr sourceObject, IntPtr result, IntPtr userData);
     internal delegate void LoadChangedCallback(IntPtr webView, int loadEvent, IntPtr userData);
     internal delegate void ScriptMessageReceivedCallback(IntPtr manager, IntPtr javascriptResult, IntPtr userData);
+    internal delegate void DestroyNotify(IntPtr data);
+    internal delegate void UriSchemeRequestCallback(IntPtr request, IntPtr userData);
 
     [DllImport(WebKitLib, EntryPoint = "webkit_user_content_manager_new")]
     internal static extern IntPtr WebKitUserContentManagerNew();
@@ -51,11 +54,35 @@ internal static class WebKitGtkNative
     [DllImport(WebKitLib, EntryPoint = "webkit_web_view_new_with_user_content_manager")]
     internal static extern IntPtr WebKitWebViewNewWithUserContentManager(IntPtr manager);
 
+    [DllImport(WebKitLib, EntryPoint = "webkit_web_context_get_default")]
+    internal static extern IntPtr WebKitWebContextGetDefault();
+
+    [DllImport(WebKitLib, EntryPoint = "webkit_web_context_register_uri_scheme")]
+    internal static extern void WebKitWebContextRegisterUriScheme(
+        IntPtr context,
+        string scheme,
+        UriSchemeRequestCallback callback,
+        IntPtr userData,
+        IntPtr userDataDestroyNotify);
+
     [DllImport(WebKitLib, EntryPoint = "webkit_web_view_load_uri")]
     internal static extern void WebKitWebViewLoadUri(IntPtr webView, string uri);
 
     [DllImport(WebKitLib, EntryPoint = "webkit_web_view_get_settings")]
     internal static extern IntPtr WebKitWebViewGetSettings(IntPtr webView);
+
+    [DllImport(WebKitLib, EntryPoint = "webkit_uri_scheme_request_get_uri")]
+    internal static extern IntPtr WebKitUriSchemeRequestGetUri(IntPtr request);
+
+    [DllImport(WebKitLib, EntryPoint = "webkit_uri_scheme_request_get_web_view")]
+    internal static extern IntPtr WebKitUriSchemeRequestGetWebView(IntPtr request);
+
+    [DllImport(WebKitLib, EntryPoint = "webkit_uri_scheme_request_finish")]
+    internal static extern void WebKitUriSchemeRequestFinish(
+        IntPtr request,
+        IntPtr stream,
+        nint streamLength,
+        string contentType);
 
     [DllImport(WebKitLib, EntryPoint = "webkit_web_view_run_javascript")]
     internal static extern void WebKitWebViewRunJavascript(
@@ -107,6 +134,12 @@ internal static class WebKitGtkNative
 
     [DllImport(GtkLib, EntryPoint = "gtk_widget_set_size_request")]
     internal static extern void GtkWidgetSetSizeRequest(IntPtr widget, int width, int height);
+
+    [DllImport(GioLib, EntryPoint = "g_memory_input_stream_new_from_data")]
+    internal static extern IntPtr GMemoryInputStreamNewFromData(
+        IntPtr data,
+        nint length,
+        DestroyNotify destroy);
 
     [DllImport(GObjectLib, EntryPoint = "g_signal_connect_data")]
     internal static extern ulong GSignalConnectData(

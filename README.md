@@ -39,7 +39,7 @@ CEF and WKWebView (macOS) adapters remain planned for later milestones. See [ROA
 
 ## Current Status
 
-> **0.1.0-preview.3** - Windows/WebView2 remains the most complete path today. Linux now also has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` stack with GTK host-window support, WebKitGTK embedding, JS bridge wiring, and file-backed `app://` startup URL translation.
+> **0.1.0-preview.3** - Windows/WebView2 remains the most complete path today. Linux now also has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` stack with GTK host-window support, WebKitGTK embedding, JS bridge wiring, and native `app://` custom-scheme asset loading.
 
 ## Quick Start
 
@@ -71,8 +71,9 @@ You can declare additional startup windows with `AddWindow(...)` when the select
 For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
 That manager can open windows, close windows, activate windows, look up live contexts by id, and post or broadcast host events.
 
-On Linux, use `OmniHost.Gtk` with `OmniHost.WebKitGtk` for the experimental path. The current v1 flow targets GTK widget hosting and translates `app://localhost/...` startup URLs to local `file://...` navigation.
+On Linux, use `OmniHost.Gtk` with `OmniHost.WebKitGtk` for the experimental path. The current v1 flow targets GTK widget hosting and now serves `app://localhost/...` assets through a native WebKitGTK URI scheme handler.
 There is now a matching sample project at `samples/OmniHost.Sample.Gtk`.
+There is also `samples/OmniHost.Sample.CrossPlatform`, which auto-selects the Windows or Linux runtime/adapter pair based on the current platform.
 
 In `wwwroot/index.html` the bridge helper is auto-injected, so no script tag is required:
 

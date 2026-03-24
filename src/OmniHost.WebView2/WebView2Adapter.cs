@@ -228,7 +228,11 @@ public sealed class WebView2Adapter : IWebViewAdapter
                     if (e.button !== 0) return;
                     if (!getDragRegion(e.target)) return;
                     e.preventDefault();
-                    omni.window.startDrag();
+                    omni.window.startDrag({
+                        button: e.button + 1,
+                        screenX: e.screenX,
+                        screenY: e.screenY
+                    });
                 }, true);
 
                 document.addEventListener('dblclick', function (e) {
@@ -241,7 +245,10 @@ public sealed class WebView2Adapter : IWebViewAdapter
                 document.addEventListener('contextmenu', function (e) {
                     if (!getDragRegion(e.target)) return;
                     e.preventDefault();
-                    omni.window.showSystemMenu();
+                    omni.window.showSystemMenu({
+                        screenX: e.screenX,
+                        screenY: e.screenY
+                    });
                 }, true);
             })();
             """;

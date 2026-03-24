@@ -15,7 +15,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
         EngineVersion = "unknown",
         SupportsJavaScript = true,
         SupportsJsBridge = true,
-        SupportsCustomSchemes = false,
+        SupportsCustomSchemes = true,
         SupportsDevTools = true,
         SupportedHostSurfaces = new[] { HostSurfaceKind.GtkWidget },
     };
@@ -67,6 +67,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
                 throw new InvalidOperationException("webkit_web_view_new_with_user_content_manager returned null.");
 
             ConfigureSettings(_webViewHandle, options);
+            WebKitGtkSchemeRegistry.Register(_webViewHandle, options);
 
             _bridge.Initialize(_userContentManagerHandle, _webViewHandle);
 
@@ -94,7 +95,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
                     $"{WebKitGtkNative.WebKitGetMicroVersion()}",
                 SupportsJavaScript = true,
                 SupportsJsBridge = true,
-                SupportsCustomSchemes = false,
+                SupportsCustomSchemes = true,
                 SupportsDevTools = true,
                 SupportedHostSurfaces = new[] { HostSurfaceKind.GtkWidget },
             };
@@ -144,6 +145,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
     {
         if (_webViewHandle != IntPtr.Zero)
         {
+            WebKitGtkSchemeRegistry.Unregister(_webViewHandle);
             WebKitGtkNative.GObjectUnref(_webViewHandle);
             _webViewHandle = IntPtr.Zero;
         }
@@ -203,21 +205,7 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
         if (!string.Equals(uri.Scheme, _options.CustomScheme, StringComparison.OrdinalIgnoreCase))
             return url;
 
-        var root = Path.GetFullPath(_options.ContentRootPath!);
-        var relative = uri.AbsolutePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var fullPath = Path.GetFullPath(Path.Combine(root, relative));
-
-        if (!fullPath.StartsWith(root, StringComparison.Ordinal))
-            throw new InvalidOperationException(
-                $"The URL '{url}' resolves outside the configured content root '{root}'.");
-
-        var builder = new UriBuilder(new Uri(fullPath))
-        {
-            Query = uri.Query.TrimStart('?'),
-            Fragment = uri.Fragment.TrimStart('#'),
-        };
-
-        return builder.Uri.AbsoluteUri;
+        return url;
     }
 
     private static string BuildWindowChromeSupportScript(OmniHostOptions options)
@@ -250,7 +238,11 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
                     if (e.button !== 0) return;
                     if (!getDragRegion(e.target)) return;
                     e.preventDefault();
-                    omni.window.startDrag();
+                    omni.window.startDrag({
+                        button: e.button + 1,
+                        screenX: e.screenX,
+                        screenY: e.screenY
+                    });
                 }, true);
 
                 document.addEventListener('dblclick', function (e) {
@@ -263,7 +255,10 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
                 document.addEventListener('contextmenu', function (e) {
                     if (!getDragRegion(e.target)) return;
                     e.preventDefault();
-                    omni.window.showSystemMenu();
+                    omni.window.showSystemMenu({
+                        screenX: e.screenX,
+                        screenY: e.screenY
+                    });
                 }, true);
             })();
             """;

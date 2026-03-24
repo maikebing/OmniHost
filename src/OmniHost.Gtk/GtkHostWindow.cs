@@ -26,6 +26,7 @@ internal sealed class GtkHostWindow : IHostWindow
     private GtkNative.DeleteEventCallback? _deleteEventCallback;
     private GtkNative.DestroyCallback? _destroyCallback;
     private GtkNative.SizeAllocateCallback? _sizeAllocateCallback;
+    private GtkNative.WindowStateEventCallback? _windowStateEventCallback;
     private GtkNative.IdleCallback? _initializeIdleCallback;
 
     internal GtkHostWindow(OmniWindowContext windowContext, IDesktopApp? desktopApp)
@@ -60,6 +61,7 @@ internal sealed class GtkHostWindow : IHostWindow
         GtkNative.GtkContainerAdd(_windowHandle, _hostContainerHandle);
         GtkNative.GtkWindowSetTitle(_windowHandle, _options.Title);
         GtkNative.GtkWindowSetDefaultSize(_windowHandle, _options.Width, _options.Height);
+        GtkNative.GtkWidgetAddEvents(_windowHandle, GtkNative.GdkStructureMask);
 
         if (_options.StartMaximized)
             GtkNative.GtkWindowMaximize(_windowHandle);
@@ -109,6 +111,7 @@ internal sealed class GtkHostWindow : IHostWindow
         _deleteEventCallback = OnDeleteEvent;
         _destroyCallback = OnDestroy;
         _sizeAllocateCallback = OnSizeAllocate;
+        _windowStateEventCallback = OnWindowStateEvent;
 
         GtkNative.GSignalConnectData(
             _windowHandle,
@@ -130,6 +133,14 @@ internal sealed class GtkHostWindow : IHostWindow
             _hostContainerHandle,
             "size-allocate",
             Marshal.GetFunctionPointerForDelegate(_sizeAllocateCallback),
+            IntPtr.Zero,
+            IntPtr.Zero,
+            0);
+
+        GtkNative.GSignalConnectData(
+            _windowHandle,
+            "window-state-event",
+            Marshal.GetFunctionPointerForDelegate(_windowStateEventCallback),
             IntPtr.Zero,
             IntPtr.Zero,
             0);
@@ -221,14 +232,29 @@ internal sealed class GtkHostWindow : IHostWindow
             return Task.FromResult("null");
         });
 
-        bridge.RegisterHandler("window.startDrag", _payload => Task.FromResult("null"));
-        bridge.RegisterHandler("window.showSystemMenu", _payload => Task.FromResult("null"));
+        bridge.RegisterHandler("window.startDrag", payload =>
+        {
+            BeginWindowDrag(payload);
+            return Task.FromResult("null");
+        });
+
+        bridge.RegisterHandler("window.showSystemMenu", _payload =>
+        {
+            ShowSystemMenu();
+            return Task.FromResult("null");
+        });
     }
 
     private int OnDeleteEvent(IntPtr widget, IntPtr eventData, IntPtr userData)
     {
         _ = HandleCloseRequestedAsync("delete_event");
         return 1;
+    }
+
+    private int OnWindowStateEvent(IntPtr widget, IntPtr eventData, IntPtr userData)
+    {
+        _ = PublishWindowStateChangedIfNeededAsync("window_state_event", GetCurrentWindowState());
+        return 0;
     }
 
     private async Task HandleCloseRequestedAsync(string reason)
@@ -243,7 +269,7 @@ internal sealed class GtkHostWindow : IHostWindow
             await PublishWindowLifecycleEventAsync("window.closing", new
             {
                 windowId = _windowContext.WindowId,
-                state = "normal",
+                state = GetCurrentWindowState(),
                 reason,
             });
 
@@ -292,7 +318,7 @@ internal sealed class GtkHostWindow : IHostWindow
         _surfaceHeight = size.height;
 
         _adapter.Resize(_surfaceWidth, _surfaceHeight);
-        _ = PublishWindowStateChangedIfNeededAsync("size_allocate", "normal");
+        _ = PublishWindowStateChangedIfNeededAsync("size_allocate", GetCurrentWindowState());
     }
 
     private async Task PublishWindowStateChangedIfNeededAsync(string reason, string windowState)
@@ -306,12 +332,89 @@ internal sealed class GtkHostWindow : IHostWindow
         {
             windowId = _windowContext.WindowId,
             state = windowState,
-            isMinimized = false,
-            isMaximized = false,
+            isMinimized = string.Equals(windowState, "minimized", StringComparison.Ordinal),
+            isMaximized = string.Equals(windowState, "maximized", StringComparison.Ordinal),
             width = _surfaceWidth,
             height = _surfaceHeight,
             reason,
         });
+    }
+
+    private void BeginWindowDrag(string payload)
+    {
+        if (_windowHandle == IntPtr.Zero)
+            return;
+
+        var request = DragRequest.TryParse(payload);
+        var button = request?.Button ?? GetCurrentMouseButton();
+        var rootX = request?.ScreenX ?? 0;
+        var rootY = request?.ScreenY ?? 0;
+        var timestamp = GtkNative.GtkGetCurrentEventTime();
+
+        if (button <= 0)
+            button = 1;
+
+        GtkNative.GtkWindowBeginMoveDrag(_windowHandle, button, rootX, rootY, timestamp);
+    }
+
+    private void ShowSystemMenu()
+    {
+        if (_windowHandle == IntPtr.Zero)
+            return;
+
+        var gdkWindow = GtkNative.GtkWidgetGetWindow(_windowHandle);
+        if (gdkWindow == IntPtr.Zero)
+            return;
+
+        var currentEvent = GtkNative.GtkGetCurrentEvent();
+        if (currentEvent == IntPtr.Zero)
+            return;
+
+        try
+        {
+            _ = GtkNative.GdkWindowShowWindowMenu(gdkWindow, currentEvent);
+        }
+        finally
+        {
+            GtkNative.GdkEventFree(currentEvent);
+        }
+    }
+
+    private string GetCurrentWindowState()
+    {
+        if (_windowHandle == IntPtr.Zero)
+            return "normal";
+
+        var gdkWindow = GtkNative.GtkWidgetGetWindow(_windowHandle);
+        if (gdkWindow == IntPtr.Zero)
+            return "normal";
+
+        var stateFlags = GtkNative.GdkWindowGetState(gdkWindow);
+        if ((stateFlags & GtkNative.GdkWindowStateIconified) != 0)
+            return "minimized";
+
+        if ((stateFlags & GtkNative.GdkWindowStateMaximized) != 0)
+            return "maximized";
+
+        return "normal";
+    }
+
+    private static int GetCurrentMouseButton()
+    {
+        var currentEvent = GtkNative.GtkGetCurrentEvent();
+        if (currentEvent == IntPtr.Zero)
+            return 1;
+
+        try
+        {
+            return GtkNative.GdkEventGetButton(currentEvent, out var button)
+                ? unchecked((int)button)
+                : 1;
+        }
+        finally
+        {
+            GtkNative.GdkEventFree(currentEvent);
+        }
     }
 
     private async Task PublishWindowLifecycleEventAsync(string eventName, object payload)
@@ -343,6 +446,30 @@ internal sealed class GtkHostWindow : IHostWindow
     {
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("GtkRuntime is only supported on Linux.");
+    }
+
+    private sealed class DragRequest
+    {
+        public int Button { get; init; }
+
+        public int ScreenX { get; init; }
+
+        public int ScreenY { get; init; }
+
+        public static DragRequest? TryParse(string payload)
+        {
+            if (string.IsNullOrWhiteSpace(payload) || string.Equals(payload, "null", StringComparison.Ordinal))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<DragRequest>(payload);
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 
     private static int _initialized;

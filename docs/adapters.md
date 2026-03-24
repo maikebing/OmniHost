@@ -23,12 +23,13 @@ Current experimental scope:
 - attach a WebKitGTK web view to a `HostSurfaceKind.GtkWidget`
 - enable JavaScript execution and the `omni` JS bridge
 - support host-to-page events through the shared bridge contract
-- translate `app://localhost/...` startup URLs to local `file://...` navigation when `ContentRootPath` is configured
+- serve `app://localhost/...` assets through a native WebKitGTK URI scheme handler when `ContentRootPath` is configured
+- expose basic Linux window bridge actions for minimize, maximize, close, drag start, and system-menu attempts
 
 Current v1 limitations:
 
-- custom scheme interception is not implemented yet, so `BrowserCapabilities.SupportsCustomSchemes` remains `false`
-- Linux window chrome helpers like `startDrag` and `showSystemMenu` are currently no-op bridge handlers
+- Linux window chrome behavior still needs broader real-world validation across distros and window managers
+- `showSystemMenu` remains best-effort and depends on the current GTK/GDK event context
 
 ## Using an Adapter
 

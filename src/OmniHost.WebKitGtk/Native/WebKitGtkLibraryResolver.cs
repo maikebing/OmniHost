@@ -23,8 +23,10 @@ internal static class WebKitGtkLibraryResolver
                 "libjavascriptcoregtk-4.0.so.0",
             ],
             ["gtk-3"] = ["libgtk-3.so.0"],
+            ["gdk-3"] = ["libgdk-3.so.0"],
             ["glib-2.0"] = ["libglib-2.0.so.0"],
             ["gobject-2.0"] = ["libgobject-2.0.so.0"],
+            ["gio-2.0"] = ["libgio-2.0.so.0"],
         };
 
     static WebKitGtkLibraryResolver()
@@ -43,8 +45,10 @@ internal static class WebKitGtkLibraryResolver
         return TryLoadAlias("webkit2gtk")
             && TryLoadAlias("javascriptcoregtk")
             && TryLoadAlias("gtk-3")
+            && TryLoadAlias("gdk-3")
             && TryLoadAlias("glib-2.0")
-            && TryLoadAlias("gobject-2.0");
+            && TryLoadAlias("gobject-2.0")
+            && TryLoadAlias("gio-2.0");
     }
 
     private static IntPtr Resolve(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
