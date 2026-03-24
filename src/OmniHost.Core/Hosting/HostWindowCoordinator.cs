@@ -4,7 +4,7 @@ namespace OmniHost.Core;
 
 /// <summary>
 /// Coordinates browser-adapter creation and host-window startup for the current application.
-/// The first implementation is intentionally single-window and will be expanded later.
+/// Tracks the current main/auxiliary window set and runs each window through the selected host factory.
 /// </summary>
 public sealed class HostWindowCoordinator
 {
@@ -58,7 +58,6 @@ public sealed class HostWindowCoordinator
 
     /// <summary>
     /// Creates and runs an additional non-main host window.
-    /// This is intentionally internal until the public multi-window API is designed.
     /// </summary>
     internal void RunAdditionalWindow(
         string windowId,

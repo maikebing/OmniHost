@@ -67,6 +67,7 @@ Optional host-level behaviour can be configured through `OmniHostOptions`, inclu
 - `WindowStyle = OmniWindowStyle.Frameless` for custom HTML/CSS chrome
 - `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
 - `ScrollBarCustomCss = "..."`
+- `AddWindow("secondary", options => { ... })` for extra startup windows on runtimes that support `IMultiWindowDesktopRuntime`
 
 Add `wwwroot/index.html`:
 
@@ -87,6 +88,16 @@ Add `wwwroot/index.html`:
 ```
 
 The `omni` bridge helper is automatically injected by OmniHost before each page loads, so no extra script tag is required.
+
+When you use `Win32Runtime`, the host also emits native window lifecycle events back into the page. For example:
+
+```js
+omni.on('window.stateChanged', (data) => {
+  console.log('Window state:', data.state);
+});
+```
+
+The `CancellationToken` passed to `OnStartAsync(...)` is tied to the lifetime of that specific host window, which is especially useful for per-window background tasks in multi-window apps.
 
 ## Win32Runtime and STA
 

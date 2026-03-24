@@ -19,6 +19,9 @@ omni.window.maximize()
 omni.window.close()
 omni.window.startDrag()
 omni.window.showSystemMenu()
+omni.on('window.stateChanged', callback)
+omni.on('window.closing', callback)
+omni.on('window.closed', callback)
 ```
 
 ---
@@ -55,6 +58,12 @@ The current native window style is also exposed as the CSS variable
 `--omni-window-style` and as the `data-omni-window-style` attribute on
 `document.documentElement`.
 
+On Windows, the host also publishes native lifecycle events back into the page:
+
+- `window.stateChanged` with `state`, `isMinimized`, `isMaximized`, `width`, `height`, and `reason`
+- `window.closing` when a close request reaches the native host window
+- `window.closed` as a best-effort final notification during teardown
+
 ---
 
 ## Sending Events from .NET to JavaScript (.NET → JS push)
@@ -68,6 +77,10 @@ Subscribe in JavaScript:
 ```js
 omni.on('tick', (data) => {
     console.log('Tick received:', data.time);
+});
+
+omni.on('window.stateChanged', (data) => {
+    console.log('Window state:', data.state, data.width, data.height);
 });
 ```
 

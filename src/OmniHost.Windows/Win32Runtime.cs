@@ -1,4 +1,5 @@
 using System.Runtime.ExceptionServices;
+using System.Collections.Concurrent;
 using OmniHost.Core;
 
 namespace OmniHost.Windows;
@@ -12,7 +13,7 @@ namespace OmniHost.Windows;
 /// (and therefore WebView2's COM-backed APIs) work correctly regardless of the
 /// apartment state of the calling thread.
 /// </remarks>
-public sealed class Win32Runtime : IDesktopRuntime
+public sealed class Win32Runtime : IMultiWindowDesktopRuntime
 {
     private readonly IHostWindowFactory _windowFactory;
     private readonly HostWindowCoordinator _coordinator;
@@ -44,27 +45,81 @@ public sealed class Win32Runtime : IDesktopRuntime
         OmniHostOptions options,
         IWebViewAdapterFactory adapterFactory,
         IDesktopApp? desktopApp)
-    {
-        Exception? capturedException = null;
+        => Run(options, Array.Empty<OmniWindowDefinition>(), adapterFactory, desktopApp);
 
+    /// <inheritdoc/>
+    public void Run(
+        OmniHostOptions options,
+        IReadOnlyList<OmniWindowDefinition> additionalWindows,
+        IWebViewAdapterFactory adapterFactory,
+        IDesktopApp? desktopApp)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(additionalWindows);
+        ArgumentNullException.ThrowIfNull(adapterFactory);
+
+        var capturedExceptions = new ConcurrentQueue<Exception>();
+        var threads = new List<Thread>(additionalWindows.Count + 1)
+        {
+            CreateWindowThread(
+                "main",
+                () => _coordinator.RunMainWindow(options, adapterFactory, _windowFactory, desktopApp),
+                capturedExceptions)
+        };
+
+        foreach (var window in additionalWindows)
+        {
+            ArgumentNullException.ThrowIfNull(window);
+
+            threads.Add(CreateWindowThread(
+                window.WindowId,
+                () => _coordinator.RunAdditionalWindow(
+                    window.WindowId,
+                    window.Options,
+                    adapterFactory,
+                    _windowFactory,
+                    desktopApp),
+                capturedExceptions));
+        }
+
+        foreach (var thread in threads)
+            thread.Start();
+
+        foreach (var thread in threads)
+            thread.Join();
+
+        if (capturedExceptions.IsEmpty)
+            return;
+
+        var exceptions = capturedExceptions.ToArray();
+        if (exceptions.Length == 1)
+            ExceptionDispatchInfo.Capture(exceptions[0]).Throw();
+
+        throw new AggregateException("One or more OmniHost windows failed.", exceptions);
+    }
+
+    private static Thread CreateWindowThread(
+        string windowId,
+        Action runWindow,
+        ConcurrentQueue<Exception> capturedExceptions)
+    {
         var thread = new Thread(() =>
         {
             try
             {
-                _coordinator.RunMainWindow(options, adapterFactory, _windowFactory, desktopApp);
+                runWindow();
             }
             catch (Exception ex)
             {
-                capturedException = ex;
+                capturedExceptions.Enqueue(ex);
             }
         });
 
         thread.SetApartmentState(ApartmentState.STA);
-        thread.Name = "OmniHost-UI";
-        thread.Start();
-        thread.Join();
+        thread.Name = string.Equals(windowId, "main", StringComparison.Ordinal)
+            ? "OmniHost-UI"
+            : $"OmniHost-UI-{windowId}";
 
-        if (capturedException is not null)
-            ExceptionDispatchInfo.Capture(capturedException).Throw();
+        return thread;
     }
 }

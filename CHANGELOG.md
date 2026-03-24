@@ -7,6 +7,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Native window lifecycle events are now pushed back through the JS bridge:
+  - `window.stateChanged`
+  - `window.closing`
+  - `window.closed`
+- Public startup multi-window support via:
+  - `OmniHostBuilder.AddWindow(...)`
+  - `IMultiWindowDesktopRuntime`
+  - `OmniWindowDefinition`
+- The basic sample now shows a live window lifecycle event stream.
+- The basic sample now launches a secondary startup window.
+
 ### Changed - breaking
 
 - Renamed the technical package / namespace family from `OmniWebHost*` to `OmniHost*`.

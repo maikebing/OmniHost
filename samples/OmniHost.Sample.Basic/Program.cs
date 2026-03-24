@@ -1,20 +1,28 @@
+using System.Text.Json;
 using OmniHost;
-using OmniHost.Windows;
 using OmniHost.WebView2;
+using OmniHost.Windows;
 
-// ── Configure and build the application ──────────────────────────────────────
 var app = OmniApp.CreateBuilder(args)
-    .Configure(o =>
+    .Configure(options =>
     {
-        o.Title           = "OmniHost Basic Sample";
-        o.CustomScheme    = "app";
-        o.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
-        o.StartUrl        = "app://localhost/index.html";
-        o.Width           = 1100;
-        o.Height          = 720;
-        o.EnableDevTools  = true;
-        o.WindowStyle     = OmniWindowStyle.Frameless;
-        o.ScrollBarMode   = OmniScrollBarMode.Auto;
+        options.Title = "OmniHost Basic Sample";
+        options.CustomScheme = "app";
+        options.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        options.StartUrl = "app://localhost/index.html";
+        options.Width = 1100;
+        options.Height = 720;
+        options.EnableDevTools = true;
+        options.WindowStyle = OmniWindowStyle.Frameless;
+        options.ScrollBarMode = OmniScrollBarMode.Auto;
+    })
+    .AddWindow("secondary", options =>
+    {
+        options.Title = "OmniHost Secondary Window";
+        options.StartUrl = "app://localhost/secondary.html";
+        options.Width = 520;
+        options.Height = 440;
+        options.WindowStyle = OmniWindowStyle.Normal;
     })
     .UseAdapter(new WebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
@@ -23,55 +31,53 @@ var app = OmniApp.CreateBuilder(args)
 
 await app.RunAsync();
 
-// ── Application lifecycle class ───────────────────────────────────────────────
 sealed class SampleApp : IDesktopApp
 {
-    private CancellationTokenSource? _cts;
-
     public Task OnStartAsync(IWebViewAdapter adapter, CancellationToken cancellationToken = default)
     {
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        // Register a handler callable from JavaScript via omni.invoke('greet', name)
-        adapter.JsBridge.RegisterHandler("greet", async payload =>
+        adapter.JsBridge.RegisterHandler("greet", payload =>
         {
-            // payload is a JSON string; strip quotes for a plain string argument
             var name = payload.Trim('"');
-            return $"\"Hello, {name}! Greetings from .NET {Environment.Version} on {Environment.MachineName}.\"";
+            return Task.FromResult(
+                $"\"Hello, {name}! Greetings from .NET {Environment.Version} on {Environment.MachineName}.\"");
         });
 
-        // Register a handler that returns system information
-        adapter.JsBridge.RegisterHandler("sysinfo", async _ =>
+        adapter.JsBridge.RegisterHandler("sysinfo", _ =>
         {
-            return System.Text.Json.JsonSerializer.Serialize(new
+            var payload = JsonSerializer.Serialize(new
             {
-                os      = Environment.OSVersion.ToString(),
-                dotnet  = Environment.Version.ToString(),
+                os = Environment.OSVersion.ToString(),
+                dotnet = Environment.Version.ToString(),
                 machine = Environment.MachineName,
-                time    = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             });
+
+            return Task.FromResult(payload);
         });
 
-        // Push a "tick" event to the page every 5 seconds
         _ = Task.Run(async () =>
         {
-            while (!_cts.Token.IsCancellationRequested)
+            try
             {
-                await Task.Delay(5000, _cts.Token).ConfigureAwait(false);
-                var payload = System.Text.Json.JsonSerializer.Serialize(new
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    time = DateTime.Now.ToString("HH:mm:ss")
-                });
-                await adapter.JsBridge.PostMessageAsync("tick", payload).ConfigureAwait(false);
+                    await Task.Delay(5000, cancellationToken).ConfigureAwait(false);
+
+                    var payload = JsonSerializer.Serialize(new
+                    {
+                        time = DateTime.Now.ToString("HH:mm:ss")
+                    });
+
+                    await adapter.JsBridge.PostMessageAsync("tick", payload).ConfigureAwait(false);
+                }
             }
-        }, _cts.Token);
+            catch (OperationCanceledException)
+            {
+            }
+        }, cancellationToken);
 
         return Task.CompletedTask;
     }
 
-    public Task OnClosingAsync(CancellationToken cancellationToken = default)
-    {
-        _cts?.Cancel();
-        return Task.CompletedTask;
-    }
+    public Task OnClosingAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

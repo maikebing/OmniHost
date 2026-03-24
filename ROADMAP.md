@@ -16,9 +16,9 @@
 - [x] Basic sample running end-to-end on Windows
 - [x] **AOT-compatible Win32 window host** — raw Win32 P/Invoke, no WinForms/WPF
 - [x] `OmniWindowStyle.Frameless` + window-control JS bridge (`minimize`, `maximize`, `close`, `startDrag`)
-- [ ] Window lifecycle management (min/max/close events via OS hook)
-- [ ] Frameless drag-region HTML attribute (`omni-drag`)
-- [ ] Multi-window support
+- [x] Window lifecycle management (state/close events via OS hook and JS bridge)
+- [x] Frameless drag-region HTML attribute (`omni-drag`)
+- [x] Multi-window support (builder-defined startup windows)
 - [ ] Splash screen helper
 
 ## Runtime / HostWindow Refactor Track
@@ -158,6 +158,7 @@ src/
 - [x] Keep single-window app startup as the default path.
 - [x] Add internal window definitions and tracked-window snapshots so future main/auxiliary windows can share one coordination pipeline.
 - [x] Clone `OmniHostOptions` per tracked window so future multi-window instances do not share one mutable options object.
+- [x] Promote startup multi-window configuration to the public builder/runtime API.
 
 #### Phase 5 — Bring the pattern to other platforms
 

@@ -82,6 +82,7 @@ await app.RunAsync();
 
 `OmniHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
 For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
+You can also declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
 
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 
@@ -91,6 +92,24 @@ const result = await omni.invoke('greet', 'World');
 
 // .NET → JS push events
 omni.on('tick', (data) => console.log(data.time));
+omni.on('window.stateChanged', (data) => console.log(data.state));
+```
+
+Startup multi-window example:
+
+```csharp
+var app = OmniApp.CreateBuilder(args)
+    .Configure(o => { o.Title = "Main"; o.StartUrl = "app://localhost/index.html"; })
+    .AddWindow("secondary", o =>
+    {
+        o.Title = "Secondary";
+        o.StartUrl = "app://localhost/secondary.html";
+        o.Width = 520;
+        o.Height = 440;
+    })
+    .UseAdapter(new WebView2AdapterFactory())
+    .UseRuntime(new Win32Runtime())
+    .Build();
 ```
 
 ---

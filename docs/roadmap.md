@@ -15,12 +15,12 @@ title: Roadmap
 - [x] JS Bridge wired to WebView2 events (`omni` helper injected)
 - [x] Custom scheme support (local asset serving via `app://localhost/`)
 - [x] `Win32Runtime` + end-to-end runnable sample on Windows
-- [x] Window lifecycle bridge (`omni.window.*`)
-- [x] Frameless window mode
+- [x] Window lifecycle bridge (`omni.window.*` controls + `omni.on("window.*")` events)
+- [x] Frameless window mode with `omni-drag`
 
 ## 0.2.x — Windows Stable
 
-- Multi-window support
+- Multi-window support via `AddWindow(...)`
 - Runtime / HostWindow refactor:
   - introduced `IHostWindow`, `IHostWindowFactory`, and `HostSurfaceDescriptor`
   - renamed the raw host-window implementation to `Win32HostWindow`

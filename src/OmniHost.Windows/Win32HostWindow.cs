@@ -1,5 +1,6 @@
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using OmniHost.Windows.Frames;
 using OmniHost.Windows.Win32;
 
@@ -37,6 +38,9 @@ internal sealed class Win32HostWindow : IHostWindow
     private Exception?                  _deferredError;
     private int                         _surfaceWidth;
     private int                         _surfaceHeight;
+    private string                      _lastWindowState = "unknown";
+    private int                         _closeRequested;
+    private readonly CancellationTokenSource _windowLifetime = new();
 
     // ── Construction ──────────────────────────────────────────────────────────
 
@@ -245,9 +249,10 @@ internal sealed class Win32HostWindow : IHostWindow
             _adapter.Resize(_surfaceWidth, _surfaceHeight);
 
             RegisterWindowBridgeHandlers();
+            await PublishWindowStateChangedIfNeededAsync("initialized");
 
             if (_desktopApp is not null)
-                await _desktopApp.OnStartAsync(_adapter);
+                await _desktopApp.OnStartAsync(_adapter, _windowLifetime.Token);
 
             await _adapter.NavigateAsync(_options.StartUrl);
         }
@@ -356,30 +361,52 @@ internal sealed class Win32HostWindow : IHostWindow
 
     private void OnResize(IntPtr wParam, IntPtr lParam)
     {
-        if ((uint)wParam == NativeMethods.SIZE_MINIMIZED) return;
+        var windowState = MapWindowState((uint)wParam);
+        if ((uint)wParam != NativeMethods.SIZE_MINIMIZED)
+        {
+            int w = (int)((uint)lParam & 0xFFFFu);
+            int h = (int)((uint)lParam >> 16);
 
-        int w = (int)((uint)lParam & 0xFFFFu);
-        int h = (int)((uint)lParam >> 16);
+            _surfaceWidth = w;
+            _surfaceHeight = h;
 
-        _surfaceWidth = w;
-        _surfaceHeight = h;
+            _adapter.Resize(w, h);
+        }
 
-        _adapter.Resize(w, h);
+        _ = PublishWindowStateChangedIfNeededAsync("wm_size", windowState);
     }
 
     private async void OnClose(IntPtr hwnd)
     {
+        if (Interlocked.Exchange(ref _closeRequested, 1) != 0)
+            return;
+
         try
         {
+            _windowLifetime.Cancel();
+
+            await PublishWindowLifecycleEventAsync("window.closing", new
+            {
+                state = GetCurrentWindowState(),
+                reason = "wm_close",
+            });
+
             if (_desktopApp is not null)
                 await _desktopApp.OnClosingAsync();
         }
         catch { /* ignore errors during shutdown */ }
+
         NativeMethods.DestroyWindow(hwnd);
     }
 
     private void OnDestroy(IntPtr hwnd)
     {
+        PublishWindowLifecycleEventAsync("window.closed", new
+        {
+            state = GetCurrentWindowState(),
+            reason = "wm_destroy",
+        }).GetAwaiter().GetResult();
+
         // Free the GCHandle stored in GWLP_USERDATA.
         var ptr = NativeMethods.GetWindowLongPtrW(hwnd, NativeMethods.GWLP_USERDATA);
         if (ptr != IntPtr.Zero)
@@ -388,6 +415,7 @@ internal sealed class Win32HostWindow : IHostWindow
             GCHandle.FromIntPtr(ptr).Free();
         }
 
+        _windowLifetime.Dispose();
         _adapter.DisposeAsync().AsTask().GetAwaiter().GetResult();
         NativeMethods.PostQuitMessage(0);
     }
@@ -398,5 +426,61 @@ internal sealed class Win32HostWindow : IHostWindow
     {
         try { NativeMethods.SetProcessDpiAwareness(2 /* PROCESS_PER_MONITOR_DPI_AWARE */); }
         catch { /* shcore.dll may be absent on very old Windows versions */ }
+    }
+
+    private string GetCurrentWindowState()
+    {
+        if (_hwnd != IntPtr.Zero)
+        {
+            if (NativeMethods.IsIconic(_hwnd))
+                return "minimized";
+
+            if (NativeMethods.IsZoomed(_hwnd))
+                return "maximized";
+        }
+
+        return "normal";
+    }
+
+    private static string MapWindowState(uint sizeCode)
+        => sizeCode switch
+        {
+            NativeMethods.SIZE_MINIMIZED => "minimized",
+            NativeMethods.SIZE_MAXIMIZED => "maximized",
+            _ => "normal",
+        };
+
+    private async Task PublishWindowStateChangedIfNeededAsync(string reason, string? windowState = null)
+    {
+        var nextState = windowState ?? GetCurrentWindowState();
+        if (string.Equals(_lastWindowState, nextState, StringComparison.Ordinal))
+            return;
+
+        _lastWindowState = nextState;
+        await PublishWindowLifecycleEventAsync("window.stateChanged", new
+        {
+            state = nextState,
+            isMinimized = string.Equals(nextState, "minimized", StringComparison.Ordinal),
+            isMaximized = string.Equals(nextState, "maximized", StringComparison.Ordinal),
+            width = _surfaceWidth,
+            height = _surfaceHeight,
+            reason,
+        });
+    }
+
+    private async Task PublishWindowLifecycleEventAsync(string eventName, object payload)
+    {
+        try
+        {
+            await _adapter.JsBridge.PostMessageAsync(eventName, JsonSerializer.Serialize(payload));
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignore late shutdown publishes once the underlying browser resources are gone.
+        }
+        catch (InvalidOperationException)
+        {
+            // Ignore lifecycle publishes before the bridge is initialized or after teardown starts.
+        }
     }
 }
