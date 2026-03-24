@@ -12,16 +12,14 @@ title: Roadmap
 - [x] `OmniWebHost.Abstractions` — interfaces and models
 - [x] `OmniWebHost.Core` — builder and runner scaffolding
 - [x] `OmniWebHost.WebView2` — real WebView2 runtime initialisation
-- [x] JS Bridge wired to WebView2 events (`window.omni` helper injected)
+- [x] JS Bridge wired to WebView2 events (`omni` helper injected)
 - [x] Custom scheme support (local asset serving via `app://localhost/`)
-- [x] `WinFormsRuntime` + end-to-end runnable sample on Windows
-- [ ] Window lifecycle (min/max/close events)
-- [ ] Frameless window mode
+- [x] `Win32Runtime` + end-to-end runnable sample on Windows
+- [x] Window lifecycle bridge (`omni.window.*`)
+- [x] Frameless window mode
 
 ## 0.2.x — Windows Stable
 
-- Window lifecycle (min/max/close events)
-- Frameless window mode
 - Multi-window support
 
 ## 0.3.x — macOS

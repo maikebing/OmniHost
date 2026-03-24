@@ -16,7 +16,7 @@ public enum OmniWindowStyle
     /// The WebView2 content fills the entire client area.
     /// <para>
     /// Use the <c>omni-drag</c> HTML attribute on elements that should act as drag regions,
-    /// and <c>window.omni.window.*</c> bridge methods to implement custom minimize / maximize /
+    /// and <c>omni.window.*</c> bridge methods to implement custom minimize / maximize /
     /// close controls from JavaScript.
     /// </para>
     /// <para>

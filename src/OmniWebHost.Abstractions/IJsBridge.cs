@@ -13,7 +13,7 @@ public interface IJsBridge
     /// <summary>
     /// Registers a host-side handler that can be invoked by JavaScript running in the WebView.
     /// </summary>
-    /// <param name="name">The name exposed to JavaScript (e.g. <c>window.omni.&lt;name&gt;</c>).</param>
+    /// <param name="name">The name exposed to JavaScript (e.g. <c>omni.&lt;name&gt;</c>).</param>
     /// <param name="handler">Async delegate that receives the JSON payload sent from JS and returns a JSON response.</param>
     void RegisterHandler(string name, Func<string, Task<string>> handler);
 

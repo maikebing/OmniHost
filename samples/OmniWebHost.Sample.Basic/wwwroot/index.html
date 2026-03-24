@@ -15,7 +15,55 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      padding: 4.5rem 1rem 2rem;
+    }
+
+    .app-shell {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .titlebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      height: 3.25rem;
+      background: linear-gradient(180deg, rgba(15,23,42,.98), rgba(15,23,42,.92));
+      border-bottom: 1px solid rgba(51, 65, 85, .9);
+      backdrop-filter: blur(14px);
+    }
+
+    .titlebar-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .65rem .85rem;
+    }
+
+    .titlebar-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      letter-spacing: .02em;
+      user-select: none;
+    }
+
+    .titlebar-hint {
+      font-size: .8rem;
+      color: #94a3b8;
+      user-select: none;
+    }
+
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
     }
 
     header {
@@ -106,6 +154,21 @@
   </style>
 </head>
 <body>
+  <div class="titlebar" omni-drag>
+    <div class="titlebar-inner" omni-drag>
+      <div>
+        <div class="titlebar-title" omni-drag>OmniWebHost Basic Sample</div>
+        <div class="titlebar-hint" omni-drag>Drag here to move. Double-click to maximize. Right-click for the system menu.</div>
+      </div>
+      <div class="titlebar-actions">
+        <button class="win-btn min" id="titlebar-min" omni-no-drag>Minimize</button>
+        <button class="win-btn max" id="titlebar-max" omni-no-drag>Maximize</button>
+        <button class="win-btn cls" id="titlebar-close" omni-no-drag>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-shell">
   <header>
     <h1>🌐 OmniWebHost</h1>
     <p>Basic Sample — WebView2 hosted in a raw Win32 window (AOT-compatible)</p>
@@ -113,7 +176,7 @@
 
   <!-- Window controls (only useful when WindowStyle = Frameless) -->
   <div class="card">
-    <h2>Window Controls · <code>window.omni.window.*</code></h2>
+    <h2>Window Controls · <code>omni.window.*</code></h2>
     <p style="color:#94a3b8;font-size:.875rem;margin-bottom:.75rem">
       Available when <code>OmniWindowStyle.Frameless</code> is set. In Normal mode the
       OS title bar provides these controls.
@@ -127,7 +190,7 @@
 
   <!-- Greet handler -->
   <div class="card">
-    <h2>JS → .NET Bridge · <code>window.omni.invoke("greet", name)</code></h2>
+    <h2>JS → .NET Bridge · <code>omni.invoke("greet", name)</code></h2>
     <div class="row">
       <input type="text" id="name-input" placeholder="Your name" value="World" />
       <button id="btn-greet">Greet from .NET</button>
@@ -137,28 +200,36 @@
 
   <!-- Sysinfo handler -->
   <div class="card">
-    <h2>JS → .NET Bridge · <code>window.omni.invoke("sysinfo")</code></h2>
+    <h2>JS → .NET Bridge · <code>omni.invoke("sysinfo")</code></h2>
     <button id="btn-sysinfo">Get System Info</button>
     <div class="output" id="sysinfo-output">Result will appear here…</div>
   </div>
 
   <!-- Tick event (server-push) -->
   <div class="card">
-    <h2>.NET → JS Event · <code>window.omni.on("tick", …)</code></h2>
+    <h2>.NET → JS Event · <code>omni.on("tick", …)</code></h2>
     <p style="color:#94a3b8;font-size:.875rem;margin-bottom:.75rem">
       .NET pushes a <code>tick</code> event every 5 seconds. Last received:
     </p>
     <div class="output" id="tick-output">Waiting for first tick…</div>
   </div>
 
+  </div>
+
   <script>
     // ── Window controls ────────────────────────────────────────────────────────
     document.getElementById('btn-win-min').addEventListener('click', () =>
-      window.omni.invoke('window.minimize'));
+      omni.window.minimize());
     document.getElementById('btn-win-max').addEventListener('click', () =>
-      window.omni.invoke('window.maximize'));
+      omni.window.maximize());
     document.getElementById('btn-win-cls').addEventListener('click', () =>
-      window.omni.invoke('window.close'));
+      omni.window.close());
+    document.getElementById('titlebar-min').addEventListener('click', () =>
+      omni.window.minimize());
+    document.getElementById('titlebar-max').addEventListener('click', () =>
+      omni.window.maximize());
+    document.getElementById('titlebar-close').addEventListener('click', () =>
+      omni.window.close());
 
     // ── Greet ──────────────────────────────────────────────────────────────────
     document.getElementById('btn-greet').addEventListener('click', async () => {
@@ -167,7 +238,7 @@
       el.className = 'output';
       el.textContent = 'Calling .NET…';
       try {
-        const result = await window.omni.invoke('greet', name);
+        const result = await omni.invoke('greet', name);
         el.textContent = result;
         el.className = 'output ok';
       } catch (err) {
@@ -182,7 +253,7 @@
       el.className = 'output';
       el.textContent = 'Calling .NET…';
       try {
-        const info = await window.omni.invoke('sysinfo');
+        const info = await omni.invoke('sysinfo');
         el.textContent = JSON.stringify(info, null, 2);
         el.className = 'output ok';
       } catch (err) {
@@ -192,7 +263,7 @@
     });
 
     // ── Tick (server-push) ─────────────────────────────────────────────────────
-    window.omni.on('tick', (data) => {
+    omni.on('tick', (data) => {
       const el = document.getElementById('tick-output');
       el.className = 'output ok';
       el.innerHTML = 'Last tick: <span class="tick-badge">' + data.time + '</span>';

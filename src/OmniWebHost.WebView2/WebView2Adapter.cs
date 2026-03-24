@@ -59,6 +59,10 @@ public sealed class WebView2Adapter : IWebViewAdapter
         // Developer tools.
         core.Settings.AreDefaultContextMenusEnabled = options.EnableDevTools;
         core.Settings.AreDevToolsEnabled = options.EnableDevTools;
+        core.Settings.IsWebMessageEnabled = true;
+
+        core.NavigationStarting += (_, _) => _bridge.SetDocumentReady(false);
+        core.NavigationCompleted += (_, _) => _bridge.SetDocumentReady(true);
 
         // Custom scheme / local asset serving.
         if (options.ContentRootPath is not null)
@@ -66,6 +70,8 @@ public sealed class WebView2Adapter : IWebViewAdapter
 
         // Initialise the JS bridge (injects helper script).
         await _bridge.InitializeAsync(core);
+        await InjectWindowChromeSupportAsync(core, options);
+        await InjectHostCssAsync(core, options);
     }
 
     public Task NavigateAsync(string url, CancellationToken cancellationToken = default)
@@ -174,7 +180,119 @@ public sealed class WebView2Adapter : IWebViewAdapter
             _                 => "application/octet-stream",
         };
 
+    private static Task InjectWindowChromeSupportAsync(CoreWebView2 core, OmniWebHostOptions options)
+    {
+        var windowStyle = options.WindowStyle == OmniWindowStyle.Frameless ? "frameless" : "normal";
+        var script = $$"""
+            (function () {
+                var style = {{System.Text.Json.JsonSerializer.Serialize(windowStyle)}};
+
+                function applyWindowStyle() {
+                    if (!document.documentElement) return;
+                    document.documentElement.style.setProperty('--omni-window-style', style);
+                    document.documentElement.setAttribute('data-omni-window-style', style);
+                }
+
+                function isInteractive(target) {
+                    return !!(target && target.closest('button, input, textarea, select, option, a, label, summary, [omni-no-drag]'));
+                }
+
+                function getDragRegion(target) {
+                    if (!target || isInteractive(target)) return null;
+                    return target.closest('[omni-drag]');
+                }
+
+                document.addEventListener('DOMContentLoaded', applyWindowStyle);
+                applyWindowStyle();
+
+                document.addEventListener('mousedown', function (e) {
+                    if (e.button !== 0) return;
+                    if (!getDragRegion(e.target)) return;
+                    e.preventDefault();
+                    omni.window.startDrag();
+                }, true);
+
+                document.addEventListener('dblclick', function (e) {
+                    if (e.button !== 0) return;
+                    if (!getDragRegion(e.target)) return;
+                    e.preventDefault();
+                    omni.window.maximize();
+                }, true);
+
+                document.addEventListener('contextmenu', function (e) {
+                    if (!getDragRegion(e.target)) return;
+                    e.preventDefault();
+                    omni.window.showSystemMenu();
+                }, true);
+            })();
+            """;
+
+        return core.AddScriptToExecuteOnDocumentCreatedAsync(script);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static Task InjectHostCssAsync(CoreWebView2 core, OmniWebHostOptions options)
+    {
+        var css = BuildHostCss(options);
+        if (string.IsNullOrWhiteSpace(css))
+            return Task.CompletedTask;
+
+        var script = $$"""
+            (function () {
+                var css = {{System.Text.Json.JsonSerializer.Serialize(css)}};
+                var styleId = 'omni-host-style';
+
+                function ensureHostStyle() {
+                    var existing = document.getElementById(styleId);
+                    if (existing) {
+                        existing.textContent = css;
+                        return;
+                    }
+
+                    var style = document.createElement('style');
+                    style.id = styleId;
+                    style.textContent = css;
+                    (document.head || document.documentElement).appendChild(style);
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', ensureHostStyle, { once: true });
+                }
+
+                ensureHostStyle();
+            })();
+            """;
+
+        return core.AddScriptToExecuteOnDocumentCreatedAsync(script);
+    }
+
+    private static string? BuildHostCss(OmniWebHostOptions options) =>
+        options.ScrollBarMode switch
+        {
+            OmniScrollBarMode.Auto => null,
+            OmniScrollBarMode.Hidden => """
+                html, body {
+                  overflow: hidden !important;
+                }
+
+                ::-webkit-scrollbar {
+                  width: 0 !important;
+                  height: 0 !important;
+                }
+                """,
+            OmniScrollBarMode.VerticalOnly => """
+                html, body {
+                  overflow-x: hidden !important;
+                  overflow-y: auto !important;
+                }
+                """,
+            OmniScrollBarMode.Custom => !string.IsNullOrWhiteSpace(options.ScrollBarCustomCss)
+                ? options.ScrollBarCustomCss
+                : throw new InvalidOperationException(
+                    "ScrollBarMode is Custom, but ScrollBarCustomCss was not provided."),
+            _ => null,
+        };
 
     private void EnsureInitialized()
     {

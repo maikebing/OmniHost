@@ -56,6 +56,7 @@ internal sealed class OmniHostWindow
 
         RegisterWindowClass();
         _hwnd = CreateNativeWindow();
+        ApplyCustomFrame(_hwnd);
 
         // Install the custom sync context BEFORE posting WM_APP_INIT so that
         // 'await' continuations inside InitializeAsync are dispatched here.
@@ -70,7 +71,7 @@ internal sealed class OmniHostWindow
         NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_APP_INIT, IntPtr.Zero, IntPtr.Zero);
 
         // ── Win32 message loop ────────────────────────────────────────────────
-        while (NativeMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
+        while (NativeMethods.GetMessageW(out var msg, IntPtr.Zero, 0, 0) > 0)
         {
             NativeMethods.TranslateMessage(ref msg);
             NativeMethods.DispatchMessageW(ref msg);
@@ -122,10 +123,11 @@ internal sealed class OmniHostWindow
         var hInstance = NativeMethods.GetModuleHandleW(IntPtr.Zero);
 
         (uint style, uint exStyle) = _options.WindowStyle == OmniWindowStyle.Frameless
-            ? (NativeMethods.WS_POPUP | NativeMethods.WS_VISIBLE
+            ? (NativeMethods.WS_OVERLAPPEDWINDOW
                | NativeMethods.WS_CLIPCHILDREN | NativeMethods.WS_CLIPSIBLINGS,
                NativeMethods.WS_EX_APPWINDOW)
-            : (NativeMethods.WS_OVERLAPPEDWINDOW | NativeMethods.WS_CLIPCHILDREN,
+            : (NativeMethods.WS_OVERLAPPEDWINDOW
+               | NativeMethods.WS_CLIPCHILDREN | NativeMethods.WS_CLIPSIBLINGS,
                0u);
 
         // We pass a GCHandle to 'this' as lpParam so the static WndProc can
@@ -182,8 +184,15 @@ internal sealed class OmniHostWindow
 
     private IntPtr InstanceWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
     {
+        if (TryHandleDwmNonClientMessage(hwnd, msg, wParam, lParam, out var dwmResult))
+            return dwmResult;
+
         switch (msg)
         {
+            case NativeMethods.WM_CREATE:
+                ApplyCustomFrame(hwnd);
+                return IntPtr.Zero;
+
             case NativeMethods.WM_APP_INIT:
                 // Start async WebView2 initialization (fire-and-forget; errors deferred).
                 _ = InitializeAsync(hwnd);
@@ -202,8 +211,18 @@ internal sealed class OmniHostWindow
                 // Suppress background erase — WebView2 paints the entire client area.
                 return (IntPtr)1;
 
+            case NativeMethods.WM_NCCALCSIZE when _options.WindowStyle == OmniWindowStyle.Frameless:
+                if (IsDwmCompositionEnabled())
+                    return IntPtr.Zero;
+                break;
+
             case NativeMethods.WM_NCHITTEST when _options.WindowStyle == OmniWindowStyle.Frameless:
                 return FramelessHitTest(hwnd, lParam);
+
+            case NativeMethods.WM_ACTIVATE when _options.WindowStyle == OmniWindowStyle.Frameless:
+            case NativeMethods.WM_DWMCOMPOSITIONCHANGED when _options.WindowStyle == OmniWindowStyle.Frameless:
+                ApplyCustomFrame(hwnd);
+                break;
 
             case NativeMethods.WM_CLOSE:
                 OnClose(hwnd);
@@ -232,10 +251,7 @@ internal sealed class OmniHostWindow
             if (_adapter is WebView2Adapter wv2)
                 wv2.Resize(rc.right - rc.left, rc.bottom - rc.top);
 
-            // For Frameless mode: register window-control bridge handlers and
-            // inject CSS variable so the page can style itself accordingly.
-            if (_options.WindowStyle == OmniWindowStyle.Frameless)
-                RegisterWindowBridgeHandlers();
+            RegisterWindowBridgeHandlers();
 
             if (_desktopApp is not null)
                 await _desktopApp.OnStartAsync(_adapter);
@@ -263,9 +279,9 @@ internal sealed class OmniHostWindow
     // ── Frameless window-control bridge handlers ──────────────────────────────
 
     /// <summary>
-    /// Registers JS bridge handlers that let the web content control a frameless window.
-    /// Exposed as <c>window.omni.window.minimize()</c>, <c>.maximize()</c>,
-    /// <c>.close()</c>, and <c>.startDrag()</c>.
+    /// Registers JS bridge handlers that let the web content control the native window.
+    /// Exposed as <c>omni.window.minimize()</c>, <c>.maximize()</c>,
+    /// <c>.close()</c>, <c>.startDrag()</c>, and <c>.showSystemMenu()</c>.
     /// </summary>
     private void RegisterWindowBridgeHandlers()
     {
@@ -307,9 +323,101 @@ internal sealed class OmniHostWindow
                 (IntPtr)NativeMethods.HTCAPTION, lParam);
             return Task.FromResult("null");
         });
+
+        bridge.RegisterHandler("window.showSystemMenu", _ =>
+        {
+            ShowSystemMenuAtCursor();
+            return Task.FromResult("null");
+        });
+    }
+
+    private void ShowSystemMenuAtCursor()
+    {
+        var menu = NativeMethods.GetSystemMenu(_hwnd, false);
+        if (menu == IntPtr.Zero)
+            return;
+
+        if (!NativeMethods.GetCursorPos(out var pt))
+            return;
+
+        NativeMethods.SetForegroundWindow(_hwnd);
+        var command = NativeMethods.TrackPopupMenuEx(
+            menu,
+            NativeMethods.TPM_LEFTALIGN | NativeMethods.TPM_RETURNCMD | NativeMethods.TPM_RIGHTBUTTON,
+            pt.x,
+            pt.y,
+            _hwnd,
+            IntPtr.Zero);
+
+        if (command != 0)
+        {
+            NativeMethods.PostMessageW(
+                _hwnd,
+                NativeMethods.WM_SYSCOMMAND,
+                (IntPtr)command,
+                IntPtr.Zero);
+        }
+
+        NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_NULL, IntPtr.Zero, IntPtr.Zero);
     }
 
     // ── Message handlers ──────────────────────────────────────────────────────
+
+    private bool TryHandleDwmNonClientMessage(
+        IntPtr hwnd,
+        uint msg,
+        IntPtr wParam,
+        IntPtr lParam,
+        out IntPtr result)
+    {
+        result = IntPtr.Zero;
+
+        if (_options.WindowStyle != OmniWindowStyle.Frameless || !IsDwmCompositionEnabled())
+            return false;
+
+        return NativeMethods.DwmDefWindowProc(hwnd, msg, wParam, lParam, out result) == 0
+            && result != IntPtr.Zero;
+    }
+
+    private bool IsDwmCompositionEnabled()
+    {
+        try
+        {
+            return NativeMethods.DwmIsCompositionEnabled(out var enabled) == 0 && enabled;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void ApplyCustomFrame(IntPtr hwnd)
+    {
+        if (_options.WindowStyle != OmniWindowStyle.Frameless || !IsDwmCompositionEnabled())
+            return;
+
+        var margins = new NativeMethods.MARGINS
+        {
+            cxLeftWidth = 0,
+            cxRightWidth = 0,
+            cyTopHeight = 1,
+            cyBottomHeight = 0,
+        };
+
+        NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref margins);
+        NativeMethods.SetWindowPos(
+            hwnd,
+            IntPtr.Zero,
+            0,
+            0,
+            0,
+            0,
+            NativeMethods.SWP_NOMOVE
+            | NativeMethods.SWP_NOSIZE
+            | NativeMethods.SWP_NOZORDER
+            | NativeMethods.SWP_NOACTIVATE
+            | NativeMethods.SWP_FRAMECHANGED);
+    }
 
     private void OnResize(IntPtr wParam, IntPtr lParam)
     {

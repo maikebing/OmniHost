@@ -79,15 +79,16 @@ await app.RunAsync();
 ```
 
 `OmniWebHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without any extra WebView2 setup in your app code.
+For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniWebHostOptions`.
 
 In `wwwroot/index.html` (bridge helper is auto-injected, no script tag needed):
 
 ```js
 // JS → .NET
-const result = await window.omni.invoke('greet', 'World');
+const result = await omni.invoke('greet', 'World');
 
 // .NET → JS push events
-window.omni.on('tick', (data) => console.log(data.time));
+omni.on('tick', (data) => console.log(data.time));
 ```
 
 ---

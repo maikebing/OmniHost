@@ -42,12 +42,15 @@ internal static class NativeMethods
     internal const uint WM_CREATE        = 0x0001u;
     internal const uint WM_DESTROY       = 0x0002u;
     internal const uint WM_SIZE          = 0x0005u;
+    internal const uint WM_ACTIVATE      = 0x0006u;
+    internal const uint WM_NULL          = 0x0000u;
     internal const uint WM_CLOSE         = 0x0010u;
     internal const uint WM_ERASEBKGND   = 0x0014u;
     internal const uint WM_NCCALCSIZE   = 0x0083u;
     internal const uint WM_NCHITTEST    = 0x0084u;
     internal const uint WM_SYSCOMMAND   = 0x0112u;
     internal const uint WM_NCLBUTTONDOWN = 0x00A1u;
+    internal const uint WM_DWMCOMPOSITIONCHANGED = 0x031Eu;
     internal const uint WM_APP          = 0x8000u;
 
     // Custom WM_APP slots
@@ -76,6 +79,7 @@ internal static class NativeMethods
     internal const uint SC_MINIMIZE = 0xF020u;
     internal const uint SC_MAXIMIZE = 0xF030u;
     internal const uint SC_RESTORE  = 0xF120u;
+    internal const uint SC_CLOSE    = 0xF060u;
 
     // ── SetWindowLongPtr index ────────────────────────────────────────────────
     internal const int GWLP_USERDATA = -21;
@@ -86,6 +90,14 @@ internal static class NativeMethods
     internal const int ResizeBorderSize   = 8;   // px — frameless resize hit-zone
     internal const uint MB_OK             = 0x00000000u;
     internal const uint MB_ICONERROR      = 0x00000010u;
+    internal const uint SWP_NOSIZE        = 0x0001u;
+    internal const uint SWP_NOMOVE        = 0x0002u;
+    internal const uint SWP_NOZORDER      = 0x0004u;
+    internal const uint SWP_NOACTIVATE    = 0x0010u;
+    internal const uint SWP_FRAMECHANGED  = 0x0020u;
+    internal const uint TPM_LEFTALIGN     = 0x0000u;
+    internal const uint TPM_RETURNCMD     = 0x0100u;
+    internal const uint TPM_RIGHTBUTTON   = 0x0002u;
 
     // ── Structs ───────────────────────────────────────────────────────────────
 
@@ -113,6 +125,15 @@ internal static class NativeMethods
         public int top;
         public int right;
         public int bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct MARGINS
+    {
+        public int cxLeftWidth;
+        public int cxRightWidth;
+        public int cyTopHeight;
+        public int cyBottomHeight;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -150,7 +171,7 @@ internal static class NativeMethods
     internal static extern bool UpdateWindow(IntPtr hWnd);
 
     [DllImport("user32.dll", ExactSpelling = true)]
-    internal static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+    internal static extern int GetMessageW(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
 
     [DllImport("user32.dll", ExactSpelling = true)]
     internal static extern bool TranslateMessage(ref MSG lpMsg);
@@ -206,6 +227,31 @@ internal static class NativeMethods
     [DllImport("user32.dll", ExactSpelling = true)]
     internal static extern bool IsIconic(IntPtr hWnd);
 
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern uint TrackPopupMenuEx(
+        IntPtr hmenu,
+        uint uFlags,
+        int x,
+        int y,
+        IntPtr hwnd,
+        IntPtr lptpm);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags);
+
     // ── kernel32.dll ──────────────────────────────────────────────────────────
 
     [DllImport("kernel32.dll", ExactSpelling = true)]
@@ -215,4 +261,18 @@ internal static class NativeMethods
 
     [DllImport("shcore.dll", ExactSpelling = true)]
     internal static extern int SetProcessDpiAwareness(int value);
+
+    [DllImport("dwmapi.dll", ExactSpelling = true)]
+    internal static extern int DwmIsCompositionEnabled(out bool pfEnabled);
+
+    [DllImport("dwmapi.dll", ExactSpelling = true)]
+    internal static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS pMarInset);
+
+    [DllImport("dwmapi.dll", ExactSpelling = true)]
+    internal static extern int DwmDefWindowProc(
+        IntPtr hWnd,
+        uint msg,
+        IntPtr wParam,
+        IntPtr lParam,
+        out IntPtr plResult);
 }
