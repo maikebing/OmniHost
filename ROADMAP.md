@@ -146,10 +146,10 @@ src/
 
 #### Phase 3 — Make window-frame implementations pluggable
 
-- [ ] Introduce `IWindowFrameStrategy`.
-- [ ] Map current `OmniWindowStyle.Normal` and `Frameless` onto concrete frame strategies.
+- [x] Introduce `IWindowFrameStrategy`.
+- [x] Map current `OmniWindowStyle.Normal` and `Frameless` onto concrete frame strategies.
 - [ ] Add room for Windows-specific variants beyond the current two modes.
-- [ ] Keep current defaults intact while the strategy layer is introduced.
+- [x] Keep current defaults intact while the strategy layer is introduced.
 
 #### Phase 4 — Prepare multi-window and surface-aware adapters
 

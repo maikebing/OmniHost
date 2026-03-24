@@ -20,6 +20,7 @@ OmniWebHost is structured as a set of layered packages with clear boundaries:
 │          OmniWebHost.Abstractions            │
 │  IWebViewAdapter  IWebViewAdapterFactory     │
 │  IHostWindow      IHostWindowFactory         │
+│  IWindowFrameStrategy                        │
 │  IJsBridge        IDesktopApp                │
 │  BrowserCapabilities  OmniWebHostOptions     │
 ├──────────────┬───────────────┬──────────────┤
@@ -56,6 +57,10 @@ Represents a concrete native host window and the browser attachment surface it e
 ### `IHostWindowFactory`
 Creates platform-specific host windows so a runtime can keep its thread/event-loop
 responsibility separate from the actual native window implementation.
+
+### `IWindowFrameStrategy`
+Represents how a native host window presents and manages its frame, such as a
+standard system frame or a custom DWM-backed frameless implementation.
 
 ### `IJsBridge`
 Bidirectional channel between .NET and JavaScript running in the WebView.

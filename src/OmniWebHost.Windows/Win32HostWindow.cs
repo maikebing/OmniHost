@@ -1,5 +1,6 @@
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using OmniWebHost.Windows.Frames;
 using OmniWebHost.Windows.Win32;
 
 namespace OmniWebHost.Windows;
@@ -29,6 +30,7 @@ internal sealed class Win32HostWindow : IHostWindow
     private readonly OmniWebHostOptions _options;
     private readonly IWebViewAdapter    _adapter;
     private readonly IDesktopApp?       _desktopApp;
+    private readonly IWin32WindowFrameStrategy _frameStrategy;
 
     private IntPtr                      _hwnd;
     private Win32SynchronizationContext? _syncContext;
@@ -43,6 +45,7 @@ internal sealed class Win32HostWindow : IHostWindow
         _options    = options;
         _adapter    = adapter;
         _desktopApp = desktopApp;
+        _frameStrategy = CreateFrameStrategy(options.WindowStyle);
         _surfaceWidth = options.Width;
         _surfaceHeight = options.Height;
     }
@@ -64,7 +67,7 @@ internal sealed class Win32HostWindow : IHostWindow
 
         RegisterWindowClass();
         _hwnd = CreateNativeWindow();
-        ApplyCustomFrame(_hwnd);
+        _frameStrategy.OnWindowCreated(_hwnd);
 
         // Install the custom sync context BEFORE posting WM_APP_INIT so that
         // 'await' continuations inside InitializeAsync are dispatched here.
@@ -130,13 +133,7 @@ internal sealed class Win32HostWindow : IHostWindow
     {
         var hInstance = NativeMethods.GetModuleHandleW(IntPtr.Zero);
 
-        (uint style, uint exStyle) = _options.WindowStyle == OmniWindowStyle.Frameless
-            ? (NativeMethods.WS_OVERLAPPEDWINDOW
-               | NativeMethods.WS_CLIPCHILDREN | NativeMethods.WS_CLIPSIBLINGS,
-               NativeMethods.WS_EX_APPWINDOW)
-            : (NativeMethods.WS_OVERLAPPEDWINDOW
-               | NativeMethods.WS_CLIPCHILDREN | NativeMethods.WS_CLIPSIBLINGS,
-               0u);
+        var (style, exStyle) = _frameStrategy.GetWindowStyles();
 
         // We pass a GCHandle to 'this' as lpParam so the static WndProc can
         // retrieve the instance during WM_NCCREATE (before CreateWindowExW returns).
@@ -192,15 +189,11 @@ internal sealed class Win32HostWindow : IHostWindow
 
     private IntPtr InstanceWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
     {
-        if (TryHandleDwmNonClientMessage(hwnd, msg, wParam, lParam, out var dwmResult))
-            return dwmResult;
+        if (_frameStrategy.TryHandleMessage(hwnd, msg, wParam, lParam, out var frameResult))
+            return frameResult;
 
         switch (msg)
         {
-            case NativeMethods.WM_CREATE:
-                ApplyCustomFrame(hwnd);
-                return IntPtr.Zero;
-
             case NativeMethods.WM_APP_INIT:
                 // Start async WebView2 initialization (fire-and-forget; errors deferred).
                 _ = InitializeAsync(hwnd);
@@ -218,19 +211,6 @@ internal sealed class Win32HostWindow : IHostWindow
             case NativeMethods.WM_ERASEBKGND:
                 // Suppress background erase — WebView2 paints the entire client area.
                 return (IntPtr)1;
-
-            case NativeMethods.WM_NCCALCSIZE when _options.WindowStyle == OmniWindowStyle.Frameless:
-                if (IsDwmCompositionEnabled())
-                    return IntPtr.Zero;
-                break;
-
-            case NativeMethods.WM_NCHITTEST when _options.WindowStyle == OmniWindowStyle.Frameless:
-                return FramelessHitTest(hwnd, lParam);
-
-            case NativeMethods.WM_ACTIVATE when _options.WindowStyle == OmniWindowStyle.Frameless:
-            case NativeMethods.WM_DWMCOMPOSITIONCHANGED when _options.WindowStyle == OmniWindowStyle.Frameless:
-                ApplyCustomFrame(hwnd);
-                break;
 
             case NativeMethods.WM_CLOSE:
                 OnClose(hwnd);
@@ -370,62 +350,6 @@ internal sealed class Win32HostWindow : IHostWindow
 
     // ── Message handlers ──────────────────────────────────────────────────────
 
-    private bool TryHandleDwmNonClientMessage(
-        IntPtr hwnd,
-        uint msg,
-        IntPtr wParam,
-        IntPtr lParam,
-        out IntPtr result)
-    {
-        result = IntPtr.Zero;
-
-        if (_options.WindowStyle != OmniWindowStyle.Frameless || !IsDwmCompositionEnabled())
-            return false;
-
-        return NativeMethods.DwmDefWindowProc(hwnd, msg, wParam, lParam, out result) == 0
-            && result != IntPtr.Zero;
-    }
-
-    private bool IsDwmCompositionEnabled()
-    {
-        try
-        {
-            return NativeMethods.DwmIsCompositionEnabled(out var enabled) == 0 && enabled;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private void ApplyCustomFrame(IntPtr hwnd)
-    {
-        if (_options.WindowStyle != OmniWindowStyle.Frameless || !IsDwmCompositionEnabled())
-            return;
-
-        var margins = new NativeMethods.MARGINS
-        {
-            cxLeftWidth = 0,
-            cxRightWidth = 0,
-            cyTopHeight = 1,
-            cyBottomHeight = 0,
-        };
-
-        NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref margins);
-        NativeMethods.SetWindowPos(
-            hwnd,
-            IntPtr.Zero,
-            0,
-            0,
-            0,
-            0,
-            NativeMethods.SWP_NOMOVE
-            | NativeMethods.SWP_NOSIZE
-            | NativeMethods.SWP_NOZORDER
-            | NativeMethods.SWP_NOACTIVATE
-            | NativeMethods.SWP_FRAMECHANGED);
-    }
-
     private void OnResize(IntPtr wParam, IntPtr lParam)
     {
         if ((uint)wParam == NativeMethods.SIZE_MINIMIZED) return;
@@ -464,39 +388,14 @@ internal sealed class Win32HostWindow : IHostWindow
         NativeMethods.PostQuitMessage(0);
     }
 
-    // ── Frameless hit-test ────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Returns edge/corner hit-test values for the resize border of a frameless window.
-    /// Uses <c>short</c> casts for correct sign extension on negative-coordinate monitors.
-    /// </summary>
-    private static IntPtr FramelessHitTest(IntPtr hwnd, IntPtr lParam)
-    {
-        if (!NativeMethods.GetWindowRect(hwnd, out var wr))
-            return (IntPtr)NativeMethods.HTCLIENT;
-
-        // GET_X_LPARAM / GET_Y_LPARAM (screen coordinates, may be negative).
-        int x = (short)((uint)lParam & 0xFFFFu);
-        int y = (short)((uint)lParam >> 16);
-
-        bool left   = x < wr.left   + NativeMethods.ResizeBorderSize;
-        bool right  = x >= wr.right  - NativeMethods.ResizeBorderSize;
-        bool top    = y < wr.top    + NativeMethods.ResizeBorderSize;
-        bool bottom = y >= wr.bottom - NativeMethods.ResizeBorderSize;
-
-        if (top    && left)  return (IntPtr)NativeMethods.HTTOPLEFT;
-        if (top    && right) return (IntPtr)NativeMethods.HTTOPRIGHT;
-        if (bottom && left)  return (IntPtr)NativeMethods.HTBOTTOMLEFT;
-        if (bottom && right) return (IntPtr)NativeMethods.HTBOTTOMRIGHT;
-        if (top)             return (IntPtr)NativeMethods.HTTOP;
-        if (bottom)          return (IntPtr)NativeMethods.HTBOTTOM;
-        if (left)            return (IntPtr)NativeMethods.HTLEFT;
-        if (right)           return (IntPtr)NativeMethods.HTRIGHT;
-
-        return (IntPtr)NativeMethods.HTCLIENT;
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static IWin32WindowFrameStrategy CreateFrameStrategy(OmniWindowStyle windowStyle)
+        => windowStyle switch
+        {
+            OmniWindowStyle.Frameless => new DwmCustomFrameStrategy(),
+            _ => new SystemFrameStrategy(),
+        };
 
     private static void TrySetDpiAwareness()
     {

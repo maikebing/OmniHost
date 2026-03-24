@@ -26,6 +26,7 @@ title: Roadmap
   - renamed `OmniHostWindow` to `Win32HostWindow`
   - moved Win32 hosting out of `OmniWebHost.WebView2` into `OmniWebHost.Windows`
   - kept `Win32Runtime` as the simple public entry point during the transition
+  - introduced `IWindowFrameStrategy` and split `Normal` / `Frameless` into concrete frame strategies
 - Naming strategy:
   - product short name: `Omni`
   - planned technical family after refactor: `OmniHost.*`
