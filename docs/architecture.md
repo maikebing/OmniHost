@@ -69,13 +69,14 @@ Bidirectional channel between .NET and JavaScript running in the WebView.
 Optional lifecycle callbacks (`OnStartAsync`, `OnClosingAsync`) for the host application.
 
 ### `BrowserCapabilities`
-Describes what a given adapter can do (DevTools, custom schemes, JS bridge, …).
+Describes what a given adapter can do (DevTools, custom schemes, JS bridge, host-surface support, …).
 
 ### `HostWindowCoordinator`
 Current single-window coordinator in `OmniWebHost.Core` that creates the adapter,
 creates the host window, tracks the current open-window set, and runs that window
 through the selected runtime. It now also owns internal window definitions and
 window snapshots so future auxiliary windows can reuse the same coordination path.
+Each tracked window now keeps its own cloned `OmniWebHostOptions` instance.
 
 ## Entry Point Flow
 
@@ -89,6 +90,7 @@ OmniApp.CreateBuilder(args)
     .RunAsync()
       → HostWindowCoordinator.RunMainWindow(...)
       → IWebViewAdapterFactory.Create()
+      → validate adapter ↔ host-surface compatibility
       → IHostWindowFactory.Create(...)
       → IWebViewAdapter.InitializeAsync(surface, options)
       → IWebViewAdapter.NavigateAsync(options.StartUrl)

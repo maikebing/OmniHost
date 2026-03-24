@@ -135,7 +135,6 @@ src/
 - [x] Rename `OmniHostWindow` to `Win32HostWindow`.
 - [x] Keep `Win32Runtime` as the public runtime entry point.
 - [x] Keep the current sample running with WebView2 + Win32 only.
-- [ ] Do not split projects yet if that slows the first pass too much.
 
 #### Phase 2 — Move Windows hosting out of the WebView2 package
 
@@ -154,10 +153,11 @@ src/
 #### Phase 4 — Prepare multi-window and surface-aware adapters
 
 - [x] Move adapter initialization from raw `nint hostHandle` to `HostSurfaceDescriptor`.
-- [ ] Add capability matching between adapters and host-surface kinds.
+- [x] Add capability matching between adapters and host-surface kinds.
 - [x] Add a host-window coordinator for multi-window lifecycle management.
 - [x] Keep single-window app startup as the default path.
 - [x] Add internal window definitions and tracked-window snapshots so future main/auxiliary windows can share one coordination pipeline.
+- [x] Clone `OmniWebHostOptions` per tracked window so future multi-window instances do not share one mutable options object.
 
 #### Phase 5 — Bring the pattern to other platforms
 

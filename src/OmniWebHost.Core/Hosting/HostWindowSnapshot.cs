@@ -6,4 +6,5 @@ namespace OmniWebHost.Core;
 public sealed record HostWindowSnapshot(
     string WindowId,
     string AdapterId,
-    bool IsMainWindow);
+    bool IsMainWindow,
+    OmniWebHostOptions Options);

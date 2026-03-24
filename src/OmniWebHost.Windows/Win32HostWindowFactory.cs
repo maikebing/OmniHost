@@ -6,6 +6,8 @@ internal sealed class Win32HostWindowFactory : IHostWindowFactory
 {
     private readonly IWin32WindowFrameStrategyFactory _frameStrategyFactory;
 
+    public HostSurfaceKind SurfaceKind => HostSurfaceKind.Hwnd;
+
     internal Win32HostWindowFactory()
         : this(new DefaultWin32WindowFrameStrategyFactory())
     {

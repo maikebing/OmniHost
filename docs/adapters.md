@@ -59,6 +59,10 @@ services.AddSingleton<IWebViewAdapterFactory, WebView2AdapterFactory>();
 always attach to a plain `HWND`. A legacy raw-handle overload still exists for
 simple adapters during the transition.
 
+Adapters should also report their supported `HostSurfaceKind` values through
+`BrowserCapabilities.SupportedHostSurfaces` so the host can reject incompatible
+runtime/window combinations early.
+
 ## Capability Detection
 
 Check `IWebViewAdapterFactory.IsAvailable` before registering:

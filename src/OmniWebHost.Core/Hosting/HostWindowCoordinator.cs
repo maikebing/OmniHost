@@ -38,7 +38,8 @@ public sealed class HostWindowCoordinator
             .Select(static window => new HostWindowSnapshot(
                 window.WindowId,
                 window.AdapterId,
-                window.IsMainWindow))
+                window.IsMainWindow,
+                window.Options.Clone()))
             .ToArray();
 
     /// <summary>
@@ -82,12 +83,15 @@ public sealed class HostWindowCoordinator
         ArgumentNullException.ThrowIfNull(adapterFactory);
         ArgumentNullException.ThrowIfNull(windowFactory);
 
+        var windowOptions = definition.Options.Clone();
         var adapter = adapterFactory.Create();
-        var window = windowFactory.Create(definition.Options, adapter, desktopApp);
+        EnsureSurfaceCompatibility(adapter, windowFactory);
+        var window = windowFactory.Create(windowOptions, adapter, desktopApp);
         var trackedWindow = new TrackedHostWindow(
             definition.WindowId,
             adapter.AdapterId,
             definition.IsMainWindow,
+            windowOptions,
             window);
 
         if (!_windows.TryAdd(definition.WindowId, trackedWindow))
@@ -123,5 +127,24 @@ public sealed class HostWindowCoordinator
         string WindowId,
         string AdapterId,
         bool IsMainWindow,
+        OmniWebHostOptions Options,
         IHostWindow Window);
+
+    private static void EnsureSurfaceCompatibility(IWebViewAdapter adapter, IHostWindowFactory windowFactory)
+    {
+        ArgumentNullException.ThrowIfNull(adapter);
+        ArgumentNullException.ThrowIfNull(windowFactory);
+
+        var supportedSurfaces = adapter.Capabilities.SupportedHostSurfaces;
+        if (supportedSurfaces.Count == 0)
+            return;
+
+        if (supportedSurfaces.Contains(windowFactory.SurfaceKind))
+            return;
+
+        var supportedList = string.Join(", ", supportedSurfaces);
+        throw new NotSupportedException(
+            $"Adapter '{adapter.AdapterId}' does not support host surface '{windowFactory.SurfaceKind}'. " +
+            $"Supported surfaces: {supportedList}.");
+    }
 }

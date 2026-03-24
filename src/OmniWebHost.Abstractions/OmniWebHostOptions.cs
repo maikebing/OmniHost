@@ -64,4 +64,25 @@ public class OmniWebHostOptions
     /// and implement a fully custom HTML/CSS chrome.
     /// </summary>
     public OmniWindowStyle WindowStyle { get; set; } = OmniWindowStyle.Normal;
+
+    /// <summary>
+    /// Creates a detached copy of the current options instance.
+    /// </summary>
+    public OmniWebHostOptions Clone()
+        => new()
+        {
+            Title = Title,
+            StartUrl = StartUrl,
+            Width = Width,
+            Height = Height,
+            StartMaximized = StartMaximized,
+            EnableDevTools = EnableDevTools,
+            CustomScheme = CustomScheme,
+            ContentRootPath = ContentRootPath,
+            UserDataFolder = UserDataFolder,
+            AdapterSettings = new Dictionary<string, string>(AdapterSettings, StringComparer.Ordinal),
+            ScrollBarMode = ScrollBarMode,
+            ScrollBarCustomCss = ScrollBarCustomCss,
+            WindowStyle = WindowStyle,
+        };
 }

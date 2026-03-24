@@ -22,4 +22,10 @@ public class BrowserCapabilities
 
     /// <summary>Whether the engine supports DevTools / remote debugging.</summary>
     public bool SupportsDevTools { get; init; }
+
+    /// <summary>
+    /// Native host-surface kinds this adapter can attach to.
+    /// </summary>
+    public IReadOnlyCollection<HostSurfaceKind> SupportedHostSurfaces { get; init; }
+        = Array.Empty<HostSurfaceKind>();
 }

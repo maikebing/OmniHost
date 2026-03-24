@@ -18,6 +18,7 @@ public sealed class WebView2Adapter : IWebViewAdapter
         SupportsJsBridge = true,
         SupportsCustomSchemes = true,
         SupportsDevTools = true,
+        SupportedHostSurfaces = new[] { HostSurfaceKind.Hwnd },
     };
 
     public string AdapterId => "webview2";
@@ -62,6 +63,7 @@ public sealed class WebView2Adapter : IWebViewAdapter
             SupportsJsBridge = true,
             SupportsCustomSchemes = true,
             SupportsDevTools = true,
+            SupportedHostSurfaces = new[] { HostSurfaceKind.Hwnd },
         };
 
         // Developer tools.

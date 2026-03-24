@@ -30,6 +30,8 @@ title: Roadmap
   - added a dedicated Windows frame-strategy factory so more frame variants can be introduced without changing `Win32HostWindow`
   - introduced a first `HostWindowCoordinator` in `OmniWebHost.Core` while keeping single-window startup as the default path
   - added internal window definitions and tracked-window snapshots so future auxiliary windows can reuse the same coordinator pipeline
+  - clones `OmniWebHostOptions` per tracked window so future multi-window instances do not share one mutable options object
+  - validates adapter and host-surface compatibility before window startup
 - Naming strategy:
   - product short name: `Omni`
   - planned technical family after refactor: `OmniHost.*`
