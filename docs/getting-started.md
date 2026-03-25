@@ -29,6 +29,7 @@ For the experimental Linux path, use `OmniHost.Gtk` with `OmniHost.WebKitGtk`.
 The getting-started sample below still focuses on the more complete Windows/WebView2 path.
 You can also inspect `samples/OmniHost.Sample.Gtk` for the current Linux example.
 If you want one sample entry that chooses the platform-specific runtime/adapter automatically, inspect `samples/OmniHost.Sample.CrossPlatform`.
+For web application embedding patterns, inspect `samples/OmniHost.Sample.WebShowcase`.
 
 ## Your First App
 
@@ -80,6 +81,7 @@ Optional host-level behaviour can be configured through `OmniHostOptions`, inclu
 - `WindowStyle = OmniWindowStyle.Frameless` for custom HTML/CSS chrome
 - `WindowStyle = OmniWindowStyle.DwmBlurGlass` for a system-frame window with a Windows 11 DWM backdrop when available
 - `WindowStyle = OmniWindowStyle.VsCode` for a frameless VS Code-like shell that still uses `omni-drag` and `omni.window.*`
+- `BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.VsCode` or `Office` when the host should render a maintained caption bar for you
 - `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
 - `ScrollBarCustomCss = "..."`
 - `AddWindow("secondary", options => { ... })` for extra startup windows on runtimes that support `IMultiWindowDesktopRuntime`

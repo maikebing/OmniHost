@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.Sample.WebShowcase</RootNamespace>
+    <AssemblyName>OmniHost.Sample.WebShowcase</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\**\*" CopyToOutputDirectory="Always" />
+    <Content Include="Scripts\**\*" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OmniHost\OmniHost.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.Windows\OmniHost.Windows.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.WebView2\OmniHost.WebView2.csproj" />
+  </ItemGroup>
+
+</Project>

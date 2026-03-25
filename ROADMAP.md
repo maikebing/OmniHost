@@ -248,6 +248,15 @@ Recommended execution order:
 
 ## Samples
 
+### Implemented
+
+- [x] ASP.NET MVC Core example in `samples/OmniHost.Sample.WebShowcase`
+- [x] Blazor frontend + ASP.NET Core backend example in `samples/OmniHost.Sample.WebShowcase`
+- [x] ASP.NET Core SPA + Vue 3 example in `samples/OmniHost.Sample.WebShowcase`
+- [x] Third-party website wrapper example in `samples/OmniHost.Sample.WebShowcase`
+- [x] AOT-friendly Minimal API + static page example in `samples/OmniHost.Sample.AotMinimalApi`
+- [x] C# scripted backend API example in `samples/OmniHost.Sample.WebShowcase`
+
 - Asp.Net MVC Core 
 - Blazor
 - Asp.Net Core Spa+ Vue3

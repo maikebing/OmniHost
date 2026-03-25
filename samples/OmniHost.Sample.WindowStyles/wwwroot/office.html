@@ -41,53 +41,6 @@
       background: linear-gradient(90deg, #b7472a, #d35400, #f59e0b);
     }
 
-    .quickbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 10px 18px;
-      background: rgba(255,255,255,0.78);
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(16px);
-    }
-
-    .quick-left,
-    .quick-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .office-badge {
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #b7472a, #d35400);
-      color: white;
-      font-weight: 800;
-      font-size: .84rem;
-      letter-spacing: .04em;
-    }
-
-    .doc-name {
-      font-size: 1rem;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .pill {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.06);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      color: var(--muted);
-      font-size: .82rem;
-      font-weight: 700;
-    }
-
     .ribbon {
       display: grid;
       grid-template-rows: auto auto;
@@ -156,6 +109,17 @@
       padding: 9px 12px;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    .token {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 700;
+      white-space: nowrap;
     }
 
     .content {
@@ -335,18 +299,6 @@
 <body>
   <div class="top-strip"></div>
 
-  <div class="quickbar">
-    <div class="quick-left">
-      <div class="office-badge">Office</div>
-      <div class="doc-name">Quarterly Business Review.docx</div>
-      <div class="pill" id="style-token">loading...</div>
-    </div>
-    <div class="quick-right">
-      <div class="pill">AutoSave On</div>
-      <div class="pill" id="tick-label">Waiting...</div>
-    </div>
-  </div>
-
   <div class="ribbon">
     <div class="tabs">
       <div class="tab active">Home</div>
@@ -357,7 +309,15 @@
     </div>
     <div class="ribbon-groups">
       <div class="group">
-        <h3>Clipboard</h3>
+        <h3>Host</h3>
+        <div class="group-actions">
+          <span class="token" id="style-token">window: loading...</span>
+          <span class="token" id="titlebar-token">titlebar: loading...</span>
+          <span class="token" id="tick-label">tick: waiting...</span>
+        </div>
+      </div>
+      <div class="group">
+        <h3>Inspect</h3>
         <div class="group-actions">
           <button id="btn-info">Info</button>
           <button id="btn-list">Windows</button>
@@ -393,11 +353,11 @@
 
     <main class="document">
       <div class="sheet">
-        <h1>Office-style host example.</h1>
+        <h1>Built-in Office title bar with ribbon content.</h1>
         <p>
-          This window keeps the native system frame and uses a ribbon-heavy content area underneath it.
-          It is meant to feel closer to Office: a strong command surface, document canvas, and properties
-          panel, while still being driven by <code>OmniWindowStyle.DwmBlurGlass</code>.
+          This example now treats the Office-like title bar as host chrome. The page starts
+          below that title bar and focuses on the ribbon, document canvas, and side panels,
+          which makes the shell reusable without every app page owning caption markup.
         </p>
 
         <div class="hero-actions">
@@ -408,16 +368,16 @@
 
         <div class="metrics">
           <div class="metric">
-            <div class="metric-label">Host Style</div>
-            <div class="metric-value">System frame + ribbon content</div>
+            <div class="metric-label">Window Style</div>
+            <div class="metric-value" id="window-style-value">Waiting...</div>
           </div>
           <div class="metric">
-            <div class="metric-label">Backdrop Goal</div>
-            <div class="metric-value">Office / document workflow shell</div>
+            <div class="metric-label">Built-In Title Bar</div>
+            <div class="metric-value" id="titlebar-style-value">Waiting...</div>
           </div>
           <div class="metric">
             <div class="metric-label">Layout</div>
-            <div class="metric-value">Quick Access + Ribbon + Sheet</div>
+            <div class="metric-value">Host title bar + ribbon + document canvas</div>
           </div>
         </div>
 
@@ -429,8 +389,8 @@
         <section class="panel">
           <h2>Notes</h2>
           <p>
-            Use this example when the native host should still feel like a productivity suite window,
-            not like a browser shell or a pure editor shell.
+            This preset is useful when the shell should feel like a productivity suite window,
+            but the caption buttons and drag region should still be centrally maintained by OmniHost.
           </p>
         </section>
       </div>
@@ -440,8 +400,8 @@
       <section class="panel">
         <h2>Properties</h2>
         <div class="output">Theme: Warm Office
-Window token: dwm-blur-glass
-Expected shell: native frame
+Window token: frameless
+Built-in title bar: office
 Command density: high</div>
       </section>
 
@@ -461,8 +421,13 @@ Command density: high</div>
   </div>
 
   <script>
-    const styleToken = document.documentElement.getAttribute('data-omni-window-style') || 'unknown';
-    document.getElementById('style-token').textContent = styleToken;
+    const windowStyleToken = document.documentElement.getAttribute('data-omni-window-style') || 'unknown';
+    const titleBarToken = document.documentElement.getAttribute('data-omni-built-in-titlebar') || 'none';
+
+    document.getElementById('style-token').textContent = 'window: ' + windowStyleToken;
+    document.getElementById('titlebar-token').textContent = 'titlebar: ' + titleBarToken;
+    document.getElementById('window-style-value').textContent = windowStyleToken;
+    document.getElementById('titlebar-style-value').textContent = titleBarToken;
 
     async function invoke(handler, payload, outputId) {
       const output = document.getElementById(outputId);
@@ -498,8 +463,8 @@ Command density: high</div>
     wireOpen('btn-open-tabbed-main', 'sample.openTabbed');
 
     omni.on('tick', (data) => {
-      document.getElementById('tick-label').textContent = data.time + ' / ' + data.style;
-      document.getElementById('status-tick').textContent = 'Tick ' + data.time;
+      document.getElementById('tick-label').textContent = 'tick: ' + data.time;
+      document.getElementById('status-tick').textContent = 'Tick ' + data.time + ' / ' + data.builtInTitleBar;
     });
 
     const eventList = document.getElementById('event-list');

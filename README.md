@@ -67,8 +67,9 @@ await app.RunAsync();
 
 `OmniHost.WebView2` registers the custom `app://` scheme during WebView2 environment creation, so `StartUrl = "app://localhost/index.html"` works without extra WebView2 setup in your app code.
 
-For window chrome and overflow control, you can also set `WindowStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
+For window chrome and overflow control, you can also set `WindowStyle`, `BuiltInTitleBarStyle`, `ScrollBarMode`, and `ScrollBarCustomCss` on `OmniHostOptions`.
 Windows currently exposes `Normal`, `Frameless`, `DwmBlurGlass`, and `VsCode` style presets through that same option.
+`BuiltInTitleBarStyle` lets the host inject a maintained title bar preset such as `VsCode` or `Office`, so individual pages do not need to duplicate caption markup and window buttons.
 The `DwmBlurGlass` preset intentionally stays on public DWM APIs, so it is a safe app-local approximation of the external `DWMBlurGlass` project rather than a system-wide hook/injection clone.
 If you specifically want a Windows Forms host surface instead of the raw Win32 host, use the optional `OmniHost.WinForms` package and `new WinFormsRuntime()`.
 You can declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
@@ -79,6 +80,8 @@ On Linux, use `OmniHost.Gtk` with `OmniHost.WebKitGtk` for the experimental path
 There is now a matching sample project at `samples/OmniHost.Sample.Gtk`.
 There is also `samples/OmniHost.Sample.CrossPlatform`, which auto-selects the Windows or Linux runtime/adapter pair based on the current platform.
 For the dedicated Windows style comparison demo, inspect `samples/OmniHost.Sample.WindowStyles`.
+For web-stack embedding scenarios, inspect `samples/OmniHost.Sample.WebShowcase`, which covers ASP.NET MVC Core, Blazor, Vue 3 SPA, a third-party website, and a C# scripted API.
+For a NativeAOT-friendly backend baseline, inspect `samples/OmniHost.Sample.AotMinimalApi`.
 
 In `wwwroot/index.html` the bridge helper is auto-injected, so no script tag is required:
 

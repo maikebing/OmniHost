@@ -79,6 +79,10 @@ public sealed class WebKitGtkAdapter : IWebViewAdapter
 
             _bridge.AddDocumentStartScript(BuildWindowChromeSupportScript(options));
 
+            var builtInTitleBarScript = BuiltInTitleBarScriptBuilder.Build(options);
+            if (!string.IsNullOrWhiteSpace(builtInTitleBarScript))
+                _bridge.AddDocumentStartScript(builtInTitleBarScript);
+
             var hostCss = BuildHostCssInjectionScript(options);
             if (!string.IsNullOrWhiteSpace(hostCss))
                 _bridge.AddDocumentStartScript(hostCss);
