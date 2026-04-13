@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: 8.0.x
+  CONFIGURATION: Release
+
+jobs:
+  build-windows:
+    name: Build Windows Solution
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore solution
+        shell: pwsh
+        run: dotnet restore OmniHost.sln
+
+      - name: Build solution
+        shell: pwsh
+        run: dotnet build OmniHost.sln -c $env:CONFIGURATION --no-restore -p:ContinuousIntegrationBuild=true
+
+  build-linux:
+    name: Build Linux Projects
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Linux-compatible projects
+        shell: bash
+        run: |
+          set -euo pipefail
+          projects=(
+            "src/OmniHost.Abstractions/OmniHost.Abstractions.csproj"
+            "src/OmniHost.Core/OmniHost.Core.csproj"
+            "src/OmniHost/OmniHost.csproj"
+            "src/OmniHost.Hosting/OmniHost.Hosting.csproj"
+            "src/OmniHost.Gtk/OmniHost.Gtk.csproj"
+            "src/OmniHost.WebKitGtk/OmniHost.WebKitGtk.csproj"
+            "samples/OmniHost.Sample.Gtk/OmniHost.Sample.Gtk.csproj"
+            "samples/OmniHost.Sample.AotMinimalApi/OmniHost.Sample.AotMinimalApi.csproj"
+          )
+
+          for project in "${projects[@]}"; do
+            dotnet restore "$project"
+          done
+
+          dotnet restore samples/OmniHost.Sample.CrossPlatform/OmniHost.Sample.CrossPlatform.csproj -p:TargetFramework=net8.0
+
+      - name: Build Linux-compatible projects
+        shell: bash
+        run: |
+          set -euo pipefail
+          projects=(
+            "src/OmniHost.Abstractions/OmniHost.Abstractions.csproj"
+            "src/OmniHost.Core/OmniHost.Core.csproj"
+            "src/OmniHost/OmniHost.csproj"
+            "src/OmniHost.Hosting/OmniHost.Hosting.csproj"
+            "src/OmniHost.Gtk/OmniHost.Gtk.csproj"
+            "src/OmniHost.WebKitGtk/OmniHost.WebKitGtk.csproj"
+            "samples/OmniHost.Sample.Gtk/OmniHost.Sample.Gtk.csproj"
+            "samples/OmniHost.Sample.AotMinimalApi/OmniHost.Sample.AotMinimalApi.csproj"
+          )
+
+          for project in "${projects[@]}"; do
+            dotnet build "$project" -c "$CONFIGURATION" --no-restore -p:ContinuousIntegrationBuild=true
+          done
+
+          dotnet build samples/OmniHost.Sample.CrossPlatform/OmniHost.Sample.CrossPlatform.csproj \
+            -c "$CONFIGURATION" \
+            -f net8.0 \
+            --no-restore \
+            -p:ContinuousIntegrationBuild=true
