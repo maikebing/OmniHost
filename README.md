@@ -33,6 +33,7 @@ The first preview ships the Windows/WebView2 path, plus an experimental first-pa
 - `OmniHost.Windows` - Windows runtime and raw Win32 host window
 - `OmniHost.WinForms` - optional Windows Forms runtime and host window
 - `OmniHost.WebView2` - WebView2 adapter
+- `OmniHost.Cef` - experimental CEF/CefSharp adapter for Windows via WinForms hosting
 - `OmniHost.Gtk` - first-pass Linux GTK runtime and host window package
 - `OmniHost.WebKitGtk` - experimental WebKitGTK adapter for Linux
 
@@ -41,6 +42,7 @@ CEF and WKWebView (macOS) adapters remain planned for later milestones. See [ROA
 ## Current Status
 
 > **0.1.0-preview.3** - Windows/WebView2 remains the most complete path today. Linux now also has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` stack with GTK host-window support, WebKitGTK embedding, JS bridge wiring, and native `app://` custom-scheme asset loading.
+> There is now also an experimental `OmniHost.Cef` path for Windows when you want a CefSharp-backed browser through `OmniHost.WinForms`.
 
 ## Quick Start
 
@@ -72,6 +74,7 @@ Windows currently exposes `Normal`, `Frameless`, `DwmBlurGlass`, and `VsCode` st
 `BuiltInTitleBarStyle` lets the host inject a maintained title bar preset such as `VsCode` or `Office`, so individual pages do not need to duplicate caption markup and window buttons.
 The `DwmBlurGlass` preset intentionally stays on public DWM APIs, so it is a safe app-local approximation of the external `DWMBlurGlass` project rather than a system-wide hook/injection clone.
 If you specifically want a Windows Forms host surface instead of the raw Win32 host, use the optional `OmniHost.WinForms` package and `new WinFormsRuntime()`.
+If you want an experimental CEF-backed Windows path, pair `OmniHost.Cef` with `OmniHost.WinForms` and `new WinFormsRuntime()`.
 You can declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
 You can also declare a dedicated splash window with `UseSplashScreen(...)`; the helper registers `omni.invoke("splash.close")` so the main page or desktop app can dismiss it once startup work completes.
 For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
@@ -80,6 +83,7 @@ That manager can open windows, close windows, activate windows, look up live con
 On Linux, use `OmniHost.Gtk` with `OmniHost.WebKitGtk` for the experimental path. The current v1 flow targets GTK widget hosting and now serves `app://localhost/...` assets through a native WebKitGTK URI scheme handler.
 There is now a matching sample project at `samples/OmniHost.Sample.Gtk`.
 There is also `samples/OmniHost.Sample.CrossPlatform`, which auto-selects the Windows or Linux runtime/adapter pair based on the current platform.
+For the experimental CEF path, inspect `samples/OmniHost.Sample.Cef`.
 For the dedicated Windows style comparison demo, inspect `samples/OmniHost.Sample.WindowStyles`.
 For web-stack embedding scenarios, inspect `samples/OmniHost.Sample.WebShowcase`, which covers ASP.NET MVC Core, Blazor, Vue 3 SPA, a third-party website, and a C# scripted API.
 For a NativeAOT-friendly backend baseline, inspect `samples/OmniHost.Sample.AotMinimalApi`.

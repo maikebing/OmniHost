@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OmniHost.Sample.Cef</RootNamespace>
+    <AssemblyName>OmniHost.Sample.Cef</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\OmniHost.Sample.Basic\wwwroot\**\*">
+      <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OmniHost\OmniHost.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.WinForms\OmniHost.WinForms.csproj" />
+    <ProjectReference Include="..\..\src\OmniHost.Cef\OmniHost.Cef.csproj" />
+  </ItemGroup>
+
+</Project>

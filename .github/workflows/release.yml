@@ -120,6 +120,7 @@ jobs:
         run: |
           $samples = @(
             @{ Project = "samples\OmniHost.Sample.Basic\OmniHost.Sample.Basic.csproj"; Name = "OmniHost.Sample.Basic-windows" },
+            @{ Project = "samples\OmniHost.Sample.Cef\OmniHost.Sample.Cef.csproj"; Name = "OmniHost.Sample.Cef-windows" },
             @{ Project = "samples\OmniHost.Sample.WindowStyles\OmniHost.Sample.WindowStyles.csproj"; Name = "OmniHost.Sample.WindowStyles-windows" },
             @{ Project = "samples\OmniHost.Sample.WebShowcase\OmniHost.Sample.WebShowcase.csproj"; Name = "OmniHost.Sample.WebShowcase-windows" },
             @{ Project = "samples\OmniHost.Sample.CrossPlatform\OmniHost.Sample.CrossPlatform.csproj"; Name = "OmniHost.Sample.CrossPlatform-windows"; Framework = "net8.0-windows" }

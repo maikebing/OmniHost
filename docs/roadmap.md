@@ -50,6 +50,6 @@ title: Roadmap
 
 ## 0.5.x - CEF (cross-platform)
 
-- `OmniHost.Cef` adapter (CefSharp / Chromely)
+- `OmniHost.Cef` experimental adapter (currently CefSharp + WinForms on Windows)
 
 See [ROADMAP.md](../ROADMAP.md) in the repository root for the full staged plan, including the refactor sketch and proposed package layout.

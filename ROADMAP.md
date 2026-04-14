@@ -233,7 +233,7 @@ Recommended execution order:
 
 ## 0.5.x — CEF (cross-platform alternative)
 
-- [ ] `OmniHost.Cef` adapter using CefSharp or Chromely
+- [x] `OmniHost.Cef` adapter using CefSharp
 - [ ] Consistent JS Bridge across all adapters
 
 ## Future
