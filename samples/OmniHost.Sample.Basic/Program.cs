@@ -16,6 +16,15 @@ var app = OmniApp.CreateBuilder(args)
         options.WindowStyle = OmniWindowStyle.VsCode;
         options.ScrollBarMode = OmniScrollBarMode.Auto;
     })
+    .UseSplashScreen(options =>
+    {
+        options.Title = "OmniHost Loading";
+        options.StartUrl = "app://localhost/splash.html";
+        options.Width = 620;
+        options.Height = 360;
+        options.WindowStyle = OmniWindowStyle.Normal;
+        options.BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.None;
+    })
     .AddWindow("secondary", options =>
     {
         options.Title = "OmniHost Secondary Window";

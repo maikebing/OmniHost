@@ -21,6 +21,7 @@ title: Roadmap
 ## 0.2.x - Windows Stable
 
 - Multi-window support via `AddWindow(...)` and `IOmniWindowManager`
+- Splash screen helper via `UseSplashScreen(...)` and `omni.invoke("splash.close")`
 - Runtime / HostWindow refactor:
   - introduced `IHostWindow`, `IHostWindowFactory`, and `HostSurfaceDescriptor`
   - renamed the raw host-window implementation to `Win32HostWindow`

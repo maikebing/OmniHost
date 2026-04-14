@@ -300,6 +300,13 @@
   </div>
 
   <script>
+    window.addEventListener('load', async () => {
+      try {
+        await omni.invoke('splash.close');
+      } catch {
+      }
+    }, { once: true });
+
     document.getElementById('btn-win-min').addEventListener('click', () =>
       omni.window.minimize());
     document.getElementById('btn-win-max').addEventListener('click', () =>

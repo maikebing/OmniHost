@@ -19,7 +19,7 @@
 - [x] Window lifecycle management (state/close events via OS hook and JS bridge)
 - [x] Frameless drag-region HTML attribute (`omni-drag`)
 - [x] Multi-window support (startup windows + runtime window manager)
-- [ ] Splash screen helper
+- [x] Splash screen helper
 
 ## Runtime / HostWindow Refactor Track
 
@@ -228,8 +228,8 @@ Recommended execution order:
 ## 0.4.x — Linux (WebKitGTK)
 
 - [x] `OmniHost.Gtk` runtime/window host package
-- [ ] `OmniHost.WebKitGtk` adapter
-- [ ] GTK window integration
+- [x] `OmniHost.WebKitGtk` adapter
+- [x] GTK window integration
 
 ## 0.5.x — CEF (cross-platform alternative)
 
@@ -244,7 +244,7 @@ Recommended execution order:
 - [x] DWMBlurGlass-inspired preset in `OmniHost.Windows` (public DWM API path)
 - [x] 原生界面带标题栏带边框
 - [x] VSCode UI host preset
-- [ ] WinForms runtime / host window
+- [x] WinForms runtime / host window
 
 ## Samples
 

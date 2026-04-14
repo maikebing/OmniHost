@@ -73,6 +73,7 @@ Windows currently exposes `Normal`, `Frameless`, `DwmBlurGlass`, and `VsCode` st
 The `DwmBlurGlass` preset intentionally stays on public DWM APIs, so it is a safe app-local approximation of the external `DWMBlurGlass` project rather than a system-wide hook/injection clone.
 If you specifically want a Windows Forms host surface instead of the raw Win32 host, use the optional `OmniHost.WinForms` package and `new WinFormsRuntime()`.
 You can declare additional startup windows with `AddWindow(...)` when the selected runtime supports `IMultiWindowDesktopRuntime`.
+You can also declare a dedicated splash window with `UseSplashScreen(...)`; the helper registers `omni.invoke("splash.close")` so the main page or desktop app can dismiss it once startup work completes.
 For dynamic window operations during runtime, use `IWindowAwareDesktopApp` together with `IOmniWindowManager`.
 That manager can open windows, close windows, activate windows, look up live contexts by id, and post or broadcast host events.
 
@@ -107,6 +108,37 @@ var app = OmniApp.CreateBuilder(args)
     .UseAdapter(new WebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
     .Build();
+```
+
+Splash screen helper example:
+
+```csharp
+var app = OmniApp.CreateBuilder(args)
+    .Configure(o =>
+    {
+        o.Title = "Main";
+        o.CustomScheme = "app";
+        o.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        o.StartUrl = "app://localhost/index.html";
+    })
+    .UseSplashScreen(o =>
+    {
+        o.Title = "Loading";
+        o.StartUrl = "app://localhost/splash.html";
+        o.Width = 560;
+        o.Height = 320;
+    })
+    .UseAdapter(new WebView2AdapterFactory())
+    .UseRuntime(new Win32Runtime())
+    .Build();
+```
+
+From the main page, close the splash window when your first screen is ready:
+
+```js
+window.addEventListener('load', async () => {
+  await omni.invoke('splash.close');
+}, { once: true });
 ```
 
 Context-aware window management example:
