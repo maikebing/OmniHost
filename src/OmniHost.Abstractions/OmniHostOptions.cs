@@ -41,6 +41,23 @@ public class OmniHostOptions
     /// </summary>
     public string? UserDataFolder { get; set; }
 
+    /// <summary>
+    /// Optional .ico file used for the native window, taskbar entry, and tray icon.
+    /// </summary>
+    public string? IconPath { get; set; }
+
+    /// <summary>Whether the Windows runtime should create a tray icon for the main window.</summary>
+    public bool EnableTrayIcon { get; set; }
+
+    /// <summary>Tooltip shown when hovering the tray icon.</summary>
+    public string? TrayToolTip { get; set; }
+
+    /// <summary>Text for the tray menu command that restores or focuses the main window.</summary>
+    public string TrayOpenText { get; set; } = "Open";
+
+    /// <summary>Text for the tray menu command that exits the application.</summary>
+    public string TrayExitText { get; set; } = "Exit";
+
     /// <summary>Additional adapter-specific settings as key-value pairs.</summary>
     public Dictionary<string, string> AdapterSettings { get; set; } = new();
 
@@ -90,6 +107,11 @@ public class OmniHostOptions
             CustomScheme = CustomScheme,
             ContentRootPath = ContentRootPath,
             UserDataFolder = UserDataFolder,
+            IconPath = IconPath,
+            EnableTrayIcon = EnableTrayIcon,
+            TrayToolTip = TrayToolTip,
+            TrayOpenText = TrayOpenText,
+            TrayExitText = TrayExitText,
             AdapterSettings = new Dictionary<string, string>(AdapterSettings, StringComparer.Ordinal),
             ScrollBarMode = ScrollBarMode,
             ScrollBarCustomCss = ScrollBarCustomCss,

@@ -17,6 +17,9 @@ internal sealed partial class Win32HostWindow : IHostWindow
     // ── Class registration ────────────────────────────────────────────────────
 
     private const string WindowClassName = "OmniHostWindow";
+    private const uint TrayIconId = 1;
+    private const uint TrayCommandOpen = 1001;
+    private const uint TrayCommandExit = 1002;
 
     /// <summary>
     /// Static WndProc delegate stored in a field to prevent GC collection.
@@ -42,6 +45,9 @@ internal sealed partial class Win32HostWindow : IHostWindow
     private int                         _surfaceHeight;
     private string                      _lastWindowState = "unknown";
     private int                         _closeRequested;
+    private IntPtr                      _largeIcon;
+    private IntPtr                      _smallIcon;
+    private bool                        _trayIconCreated;
     private readonly CancellationTokenSource _windowLifetime = new();
 
     // ── Construction ──────────────────────────────────────────────────────────
@@ -78,6 +84,8 @@ internal sealed partial class Win32HostWindow : IHostWindow
         RegisterWindowClass();
         _hwnd = CreateNativeWindow();
         _frameStrategy.OnWindowCreated(_hwnd);
+        InitializeWindowIcon();
+        InitializeTrayIcon();
 
         // Install the custom sync context BEFORE posting WM_APP_INIT so that
         // 'await' continuations inside InitializeAsync are dispatched here.
@@ -235,6 +243,10 @@ internal sealed partial class Win32HostWindow : IHostWindow
             case NativeMethods.WM_APP_DELEGATE:
                 // Drain continuations posted by Win32SynchronizationContext.
                 _syncContext?.DrainQueue();
+                return IntPtr.Zero;
+
+            case NativeMethods.WM_APP_TRAY:
+                OnTrayMessage((uint)lParam);
                 return IntPtr.Zero;
 
             case NativeMethods.WM_SIZE:
@@ -441,6 +453,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
     private void OnDestroy(IntPtr hwnd)
     {
+        RemoveTrayIcon();
         PublishWindowLifecycleEventAsync(
             "window.closed",
             new WindowLifecyclePayload(GetCurrentWindowState(), "wm_destroy"))
@@ -457,10 +470,159 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
         _windowLifetime.Dispose();
         _adapter.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        DestroyOwnedIcons();
         NativeMethods.PostQuitMessage(0);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void InitializeWindowIcon()
+    {
+        _largeIcon = LoadConfiguredIcon(32, 32);
+        _smallIcon = LoadConfiguredIcon(16, 16);
+
+        var largeIcon = _largeIcon != IntPtr.Zero
+            ? _largeIcon
+            : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION);
+        var smallIcon = _smallIcon != IntPtr.Zero
+            ? _smallIcon
+            : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION);
+
+        if (largeIcon != IntPtr.Zero)
+            NativeMethods.SendMessageW(_hwnd, NativeMethods.WM_SETICON, (IntPtr)NativeMethods.ICON_BIG, largeIcon);
+
+        if (smallIcon != IntPtr.Zero)
+            NativeMethods.SendMessageW(_hwnd, NativeMethods.WM_SETICON, (IntPtr)NativeMethods.ICON_SMALL, smallIcon);
+    }
+
+    private void InitializeTrayIcon()
+    {
+        if (!_windowContext.IsMainWindow || !_options.EnableTrayIcon)
+            return;
+
+        var trayIcon = _smallIcon != IntPtr.Zero
+            ? _smallIcon
+            : (_largeIcon != IntPtr.Zero ? _largeIcon : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION));
+        if (trayIcon == IntPtr.Zero)
+            return;
+
+        var data = CreateTrayIconData(trayIcon);
+        _trayIconCreated = NativeMethods.Shell_NotifyIconW(NativeMethods.NIM_ADD, ref data);
+    }
+
+    private NativeMethods.NOTIFYICONDATAW CreateTrayIconData(IntPtr icon)
+        => new()
+        {
+            cbSize = (uint)Marshal.SizeOf<NativeMethods.NOTIFYICONDATAW>(),
+            hWnd = _hwnd,
+            uID = TrayIconId,
+            uFlags = NativeMethods.NIF_MESSAGE | NativeMethods.NIF_ICON | NativeMethods.NIF_TIP,
+            uCallbackMessage = NativeMethods.WM_APP_TRAY,
+            hIcon = icon,
+            szTip = TrimTrayText(_options.TrayToolTip ?? _options.Title, 127)
+        };
+
+    private void OnTrayMessage(uint message)
+    {
+        if (message is NativeMethods.WM_LBUTTONDBLCLK)
+        {
+            RequestActivate();
+            return;
+        }
+
+        if (message is NativeMethods.WM_RBUTTONUP or NativeMethods.WM_CONTEXTMENU)
+        {
+            ShowTrayMenuAtCursor();
+        }
+    }
+
+    private void ShowTrayMenuAtCursor()
+    {
+        var menu = NativeMethods.CreatePopupMenu();
+        if (menu == IntPtr.Zero)
+            return;
+
+        try
+        {
+            NativeMethods.AppendMenuW(menu, NativeMethods.MF_STRING, TrayCommandOpen, _options.TrayOpenText);
+            NativeMethods.AppendMenuW(menu, NativeMethods.MF_SEPARATOR, 0, null);
+            NativeMethods.AppendMenuW(menu, NativeMethods.MF_STRING, TrayCommandExit, _options.TrayExitText);
+
+            if (!NativeMethods.GetCursorPos(out var pt))
+                return;
+
+            NativeMethods.SetForegroundWindow(_hwnd);
+            var command = NativeMethods.TrackPopupMenuEx(
+                menu,
+                NativeMethods.TPM_LEFTALIGN | NativeMethods.TPM_RETURNCMD | NativeMethods.TPM_RIGHTBUTTON,
+                pt.x,
+                pt.y,
+                _hwnd,
+                IntPtr.Zero);
+
+            if (command == TrayCommandOpen)
+            {
+                RequestActivate();
+            }
+            else if (command == TrayCommandExit)
+            {
+                NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            }
+
+            NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_NULL, IntPtr.Zero, IntPtr.Zero);
+        }
+        finally
+        {
+            NativeMethods.DestroyMenu(menu);
+        }
+    }
+
+    private void RemoveTrayIcon()
+    {
+        if (!_trayIconCreated)
+            return;
+
+        var data = new NativeMethods.NOTIFYICONDATAW
+        {
+            cbSize = (uint)Marshal.SizeOf<NativeMethods.NOTIFYICONDATAW>(),
+            hWnd = _hwnd,
+            uID = TrayIconId
+        };
+        NativeMethods.Shell_NotifyIconW(NativeMethods.NIM_DELETE, ref data);
+        _trayIconCreated = false;
+    }
+
+    private IntPtr LoadConfiguredIcon(int width, int height)
+    {
+        if (string.IsNullOrWhiteSpace(_options.IconPath) || !File.Exists(_options.IconPath))
+            return IntPtr.Zero;
+
+        return NativeMethods.LoadImageW(
+            IntPtr.Zero,
+            _options.IconPath,
+            NativeMethods.IMAGE_ICON,
+            width,
+            height,
+            NativeMethods.LR_LOADFROMFILE | NativeMethods.LR_DEFAULTSIZE);
+    }
+
+    private void DestroyOwnedIcons()
+    {
+        if (_largeIcon != IntPtr.Zero)
+        {
+            NativeMethods.DestroyIcon(_largeIcon);
+            _largeIcon = IntPtr.Zero;
+        }
+
+        if (_smallIcon != IntPtr.Zero)
+        {
+            NativeMethods.DestroyIcon(_smallIcon);
+            _smallIcon = IntPtr.Zero;
+        }
+    }
+
+    private static string TrimTrayText(string value, int maxLength)
+        => value.Length <= maxLength ? value : value[..maxLength];
 
     private static void TrySetDpiAwareness()
     {

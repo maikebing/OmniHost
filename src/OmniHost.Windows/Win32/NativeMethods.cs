@@ -51,12 +51,18 @@ internal static class NativeMethods
     internal const uint WM_NCHITTEST    = 0x0084u;
     internal const uint WM_SYSCOMMAND   = 0x0112u;
     internal const uint WM_NCLBUTTONDOWN = 0x00A1u;
+    internal const uint WM_COMMAND      = 0x0111u;
+    internal const uint WM_SETICON      = 0x0080u;
+    internal const uint WM_CONTEXTMENU  = 0x007Bu;
+    internal const uint WM_LBUTTONDBLCLK = 0x0203u;
+    internal const uint WM_RBUTTONUP    = 0x0205u;
     internal const uint WM_DWMCOMPOSITIONCHANGED = 0x031Eu;
     internal const uint WM_APP          = 0x8000u;
 
     // Custom WM_APP slots
     internal const uint WM_APP_INIT     = WM_APP + 0u;   // trigger async WebView2 init
     internal const uint WM_APP_DELEGATE = WM_APP + 1u;   // drain SynchronizationContext queue
+    internal const uint WM_APP_TRAY     = WM_APP + 2u;   // native tray icon callback
 
     // ── Hit-test return values ────────────────────────────────────────────────
     internal const nint HTNOWHERE      = 0;
@@ -88,6 +94,10 @@ internal static class NativeMethods
     // ── Misc ──────────────────────────────────────────────────────────────────
     internal const int CW_USEDEFAULT      = unchecked((int)0x80000000);
     internal const int IDC_ARROW          = 32512;
+    internal const int IDI_APPLICATION    = 32512;
+    internal const int IMAGE_ICON         = 1;
+    internal const int ICON_SMALL         = 0;
+    internal const int ICON_BIG           = 1;
     internal const int ResizeBorderSize   = 8;   // px — frameless resize hit-zone
     internal const uint MB_OK             = 0x00000000u;
     internal const uint MB_ICONERROR      = 0x00000010u;
@@ -99,6 +109,16 @@ internal static class NativeMethods
     internal const uint TPM_LEFTALIGN     = 0x0000u;
     internal const uint TPM_RETURNCMD     = 0x0100u;
     internal const uint TPM_RIGHTBUTTON   = 0x0002u;
+    internal const uint MF_STRING         = 0x0000u;
+    internal const uint MF_SEPARATOR      = 0x0800u;
+    internal const uint LR_LOADFROMFILE   = 0x0010u;
+    internal const uint LR_DEFAULTSIZE    = 0x0040u;
+    internal const uint NIM_ADD           = 0x00000000u;
+    internal const uint NIM_MODIFY        = 0x00000001u;
+    internal const uint NIM_DELETE        = 0x00000002u;
+    internal const uint NIF_MESSAGE       = 0x00000001u;
+    internal const uint NIF_ICON          = 0x00000002u;
+    internal const uint NIF_TIP           = 0x00000004u;
 
     // DWM window attributes
     internal const uint DWMWA_USE_IMMERSIVE_DARK_MODE = 20u;
@@ -175,6 +195,26 @@ internal static class NativeMethods
         public IntPtr hIconSm;
     }
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct NOTIFYICONDATAW
+    {
+        public uint cbSize;
+        public IntPtr hWnd;
+        public uint uID;
+        public uint uFlags;
+        public uint uCallbackMessage;
+        public IntPtr hIcon;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string szTip;
+        public uint dwState;
+        public uint dwStateMask;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)] public string szInfo;
+        public uint uVersionOrTimeout;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)] public string szInfoTitle;
+        public uint dwInfoFlags;
+        public Guid guidItem;
+        public IntPtr hBalloonIcon;
+    }
+
     // ── user32.dll ────────────────────────────────────────────────────────────
 
     [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Unicode, SetLastError = true)]
@@ -231,6 +271,21 @@ internal static class NativeMethods
     [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Unicode, SetLastError = true)]
     internal static extern IntPtr LoadCursorW(IntPtr hInstance, int lpCursorName);
 
+    [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern IntPtr LoadIconW(IntPtr hInstance, int lpIconName);
+
+    [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern IntPtr LoadImageW(
+        IntPtr hinst,
+        string lpszName,
+        uint uType,
+        int cxDesired,
+        int cyDesired,
+        uint fuLoad);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern bool DestroyIcon(IntPtr hIcon);
+
     [DllImport("user32.dll", ExactSpelling = true)]
     internal static extern IntPtr SetWindowLongPtrW(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
@@ -260,6 +315,15 @@ internal static class NativeMethods
         int y,
         IntPtr hwnd,
         IntPtr lptpm);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern IntPtr CreatePopupMenu();
+
+    [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+    internal static extern bool AppendMenuW(IntPtr hMenu, uint uFlags, nuint uIDNewItem, string? lpNewItem);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern bool DestroyMenu(IntPtr hMenu);
 
     [DllImport("user32.dll", ExactSpelling = true)]
     internal static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -311,4 +375,9 @@ internal static class NativeMethods
         uint dwAttribute,
         ref uint pvAttribute,
         uint cbAttribute);
+
+    // ── shell32.dll ──────────────────────────────────────────────────────────
+
+    [DllImport("shell32.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+    internal static extern bool Shell_NotifyIconW(uint dwMessage, ref NOTIFYICONDATAW lpData);
 }
