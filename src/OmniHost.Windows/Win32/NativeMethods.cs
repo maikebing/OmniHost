@@ -110,6 +110,8 @@ internal static class NativeMethods
     internal const uint TPM_RETURNCMD     = 0x0100u;
     internal const uint TPM_RIGHTBUTTON   = 0x0002u;
     internal const uint MF_STRING         = 0x0000u;
+    internal const uint MF_GRAYED         = 0x0001u;
+    internal const uint MF_CHECKED        = 0x0008u;
     internal const uint MF_SEPARATOR      = 0x0800u;
     internal const uint LR_LOADFROMFILE   = 0x0010u;
     internal const uint LR_DEFAULTSIZE    = 0x0040u;

@@ -20,6 +20,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
     private const uint TrayIconId = 1;
     private const uint TrayCommandOpen = 1001;
     private const uint TrayCommandExit = 1002;
+    private const uint TrayCustomCommandStart = 2000;
 
     /// <summary>
     /// Static WndProc delegate stored in a field to prevent GC collection.
@@ -519,7 +520,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
             uFlags = NativeMethods.NIF_MESSAGE | NativeMethods.NIF_ICON | NativeMethods.NIF_TIP,
             uCallbackMessage = NativeMethods.WM_APP_TRAY,
             hIcon = icon,
-            szTip = TrimTrayText(_options.TrayToolTip ?? _options.Title, 127)
+            szTip = TrimTrayText(GetTrayToolTip(), 127)
         };
 
     private void OnTrayMessage(uint message)
@@ -538,15 +539,22 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
     private void ShowTrayMenuAtCursor()
     {
+        UpdateTrayToolTip();
         var menu = NativeMethods.CreatePopupMenu();
         if (menu == IntPtr.Zero)
             return;
 
         try
         {
-            NativeMethods.AppendMenuW(menu, NativeMethods.MF_STRING, TrayCommandOpen, _options.TrayOpenText);
+            NativeMethods.AppendMenuW(menu, NativeMethods.MF_STRING, TrayCommandOpen, EscapeMenuText(_options.TrayOpenText));
             NativeMethods.AppendMenuW(menu, NativeMethods.MF_SEPARATOR, 0, null);
-            NativeMethods.AppendMenuW(menu, NativeMethods.MF_STRING, TrayCommandExit, _options.TrayExitText);
+            var customCommands = AppendCustomTrayMenuItems(menu);
+            if (customCommands.Count > 0)
+            {
+                NativeMethods.AppendMenuW(menu, NativeMethods.MF_SEPARATOR, 0, null);
+            }
+
+            NativeMethods.AppendMenuW(menu, NativeMethods.MF_STRING, TrayCommandExit, EscapeMenuText(_options.TrayExitText));
 
             if (!NativeMethods.GetCursorPos(out var pt))
                 return;
@@ -568,6 +576,10 @@ internal sealed partial class Win32HostWindow : IHostWindow
             {
                 NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
             }
+            else if (customCommands.TryGetValue(command, out var customCommandId))
+            {
+                DispatchTrayCustomCommand(customCommandId);
+            }
 
             NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_NULL, IntPtr.Zero, IntPtr.Zero);
         }
@@ -575,6 +587,108 @@ internal sealed partial class Win32HostWindow : IHostWindow
         {
             NativeMethods.DestroyMenu(menu);
         }
+    }
+
+    private Dictionary<uint, string> AppendCustomTrayMenuItems(IntPtr menu)
+    {
+        var result = new Dictionary<uint, string>();
+        var provider = _options.TrayMenuProvider;
+        if (provider is null)
+            return result;
+
+        IReadOnlyList<OmniTrayMenuItem> items;
+        try
+        {
+            items = provider();
+        }
+        catch
+        {
+            return result;
+        }
+
+        var nextCommand = TrayCustomCommandStart;
+        foreach (var item in items)
+        {
+            if (item.Separator)
+            {
+                NativeMethods.AppendMenuW(menu, NativeMethods.MF_SEPARATOR, 0, null);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Text))
+                continue;
+
+            var flags = NativeMethods.MF_STRING;
+            if (!item.Enabled || string.IsNullOrWhiteSpace(item.Id))
+            {
+                flags |= NativeMethods.MF_GRAYED;
+            }
+
+            if (item.Checked)
+            {
+                flags |= NativeMethods.MF_CHECKED;
+            }
+
+            var command = item.Enabled && !string.IsNullOrWhiteSpace(item.Id) ? nextCommand++ : 0;
+            if (command != 0)
+            {
+                result[command] = item.Id;
+            }
+
+            NativeMethods.AppendMenuW(menu, flags, command, EscapeMenuText(item.Text));
+        }
+
+        return result;
+    }
+
+    private void DispatchTrayCustomCommand(string commandId)
+    {
+        var handler = _options.TrayCommandHandler;
+        if (handler is null)
+            return;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await handler(commandId, _windowLifetime.Token);
+                UpdateTrayToolTip();
+            }
+            catch
+            {
+                // 托盘命令失败不应拖垮宿主窗口。
+            }
+        });
+    }
+
+    private string GetTrayToolTip()
+    {
+        try
+        {
+            return _options.TrayToolTipProvider?.Invoke()
+                ?? _options.TrayToolTip
+                ?? _options.Title;
+        }
+        catch
+        {
+            return _options.TrayToolTip ?? _options.Title;
+        }
+    }
+
+    private void UpdateTrayToolTip()
+    {
+        if (!_trayIconCreated)
+            return;
+
+        var data = new NativeMethods.NOTIFYICONDATAW
+        {
+            cbSize = (uint)Marshal.SizeOf<NativeMethods.NOTIFYICONDATAW>(),
+            hWnd = _hwnd,
+            uID = TrayIconId,
+            uFlags = NativeMethods.NIF_TIP,
+            szTip = TrimTrayText(GetTrayToolTip(), 127)
+        };
+        NativeMethods.Shell_NotifyIconW(NativeMethods.NIM_MODIFY, ref data);
     }
 
     private void RemoveTrayIcon()
@@ -623,6 +737,9 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
     private static string TrimTrayText(string value, int maxLength)
         => value.Length <= maxLength ? value : value[..maxLength];
+
+    private static string EscapeMenuText(string value)
+        => value.Replace("&", "&&", StringComparison.Ordinal);
 
     private static void TrySetDpiAwareness()
     {

@@ -58,6 +58,15 @@ public class OmniHostOptions
     /// <summary>Text for the tray menu command that exits the application.</summary>
     public string TrayExitText { get; set; } = "Exit";
 
+    /// <summary>托盘图标的可选动态提示文本提供器。</summary>
+    public Func<string>? TrayToolTipProvider { get; set; }
+
+    /// <summary>可选的动态托盘菜单项提供器。</summary>
+    public Func<IReadOnlyList<OmniTrayMenuItem>>? TrayMenuProvider { get; set; }
+
+    /// <summary>动态托盘菜单项的可选命令处理器。</summary>
+    public Func<string, CancellationToken, ValueTask>? TrayCommandHandler { get; set; }
+
     /// <summary>Additional adapter-specific settings as key-value pairs.</summary>
     public Dictionary<string, string> AdapterSettings { get; set; } = new();
 
@@ -112,6 +121,9 @@ public class OmniHostOptions
             TrayToolTip = TrayToolTip,
             TrayOpenText = TrayOpenText,
             TrayExitText = TrayExitText,
+            TrayToolTipProvider = TrayToolTipProvider,
+            TrayMenuProvider = TrayMenuProvider,
+            TrayCommandHandler = TrayCommandHandler,
             AdapterSettings = new Dictionary<string, string>(AdapterSettings, StringComparer.Ordinal),
             ScrollBarMode = ScrollBarMode,
             ScrollBarCustomCss = ScrollBarCustomCss,
