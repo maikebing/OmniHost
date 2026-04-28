@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\OmniHost.Abstractions\OmniHost.Abstractions.csproj" />
     <ProjectReference Include="..\OmniHost.Core\OmniHost.Core.csproj" />
   </ItemGroup>

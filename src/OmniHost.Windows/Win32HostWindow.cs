@@ -291,9 +291,10 @@ internal sealed class Win32HostWindow : IHostWindow
         catch (Exception ex)
         {
             _deferredError = ex;
+            Console.Error.WriteLine(ex);
 
             var text =
-                $"OmniHost failed to initialize the browser adapter '{_adapter.AdapterId}':\n\n{ex.Message}";
+                $"OmniHost failed to initialize the browser adapter '{_adapter.AdapterId}':\n\n{ex}";
 
             NativeMethods.MessageBoxW(
                 hwnd, text,

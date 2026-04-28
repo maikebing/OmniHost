@@ -33,4 +33,3 @@ public sealed class WebView2AdapterFactory : IWebViewAdapterFactory
 
     public IWebViewAdapter Create() => new WebView2Adapter();
 }
-
