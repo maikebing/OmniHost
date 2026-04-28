@@ -217,9 +217,7 @@ internal sealed class NativeWebView2JsBridge : IJsBridge, IDisposable
             PWSTR.From(script),
             new CoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler((result, scriptId) =>
             {
-                if (scriptId.Value != 0)
-                    Marshal.FreeCoTaskMem(scriptId.Value);
-
+                // WebView2 负责管理返回的脚本 ID 内存，这里不能手动释放，否则 WebView2Aot 路径会原生崩溃。
                 if (result.IsError)
                 {
                     tcs.TrySetException(Marshal.GetExceptionForHR(result)!);
