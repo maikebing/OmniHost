@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+    <RootNamespace>OmniHost.NativeWebView2</RootNamespace>
+    <AssemblyName>OmniHost.NativeWebView2</AssemblyName>
+    <Version>0.1.0-preview.3</Version>
+    <Description>AOT-friendly native WebView2 adapter for OmniHost using WebView2Aot.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WebView2Aot" Version="1.4.1" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OmniHost.Abstractions\OmniHost.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(PkgMicrosoft_Web_WebView2)\runtimes\win-x64\native\WebView2Loader.dll" LogicalName="runtimes.win-x64.native.WebView2Loader.dll" />
+    <EmbeddedResource Include="$(PkgMicrosoft_Web_WebView2)\runtimes\win-x86\native\WebView2Loader.dll" LogicalName="runtimes.win-x86.native.WebView2Loader.dll" />
+    <EmbeddedResource Include="$(PkgMicrosoft_Web_WebView2)\runtimes\win-arm64\native\WebView2Loader.dll" LogicalName="runtimes.win-arm64.native.WebView2Loader.dll" />
+  </ItemGroup>
+
+</Project>
