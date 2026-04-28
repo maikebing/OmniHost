@@ -50,6 +50,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
     private IntPtr                      _largeIcon;
     private IntPtr                      _smallIcon;
     private bool                        _trayIconCreated;
+    private bool                        _windowShown;
     private readonly CancellationTokenSource _windowLifetime = new();
 
     // ── Construction ──────────────────────────────────────────────────────────
@@ -94,10 +95,6 @@ internal sealed partial class Win32HostWindow : IHostWindow
         _syncContext = new Win32SynchronizationContext(_hwnd);
         SynchronizationContext.SetSynchronizationContext(_syncContext);
 
-        NativeMethods.ShowWindow(_hwnd,
-            _options.StartMaximized ? NativeMethods.SW_SHOWMAXIMIZED : NativeMethods.SW_SHOW);
-        NativeMethods.UpdateWindow(_hwnd);
-
         // Kick off async init from inside the message loop.
         NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_APP_INIT, IntPtr.Zero, IntPtr.Zero);
 
@@ -128,13 +125,9 @@ internal sealed partial class Win32HostWindow : IHostWindow
         if (_hwnd == IntPtr.Zero)
             return;
 
-        if (NativeMethods.IsIconic(_hwnd))
-            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_RESTORE);
-        else
-            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_SHOW);
+        ShowMainWindow("activate");
 
         NativeMethods.SetForegroundWindow(_hwnd);
-        _ = PublishWindowStateChangedIfNeededAsync("activate");
     }
 
     // ── Window class registration ─────────────────────────────────────────────
@@ -302,7 +295,8 @@ internal sealed partial class Win32HostWindow : IHostWindow
                 await _desktopApp.OnStartAsync(_adapter, _windowLifetime.Token);
             }
 
-            await _adapter.NavigateAsync(_options.StartUrl);
+            await _adapter.NavigateAsync(_options.StartUrl, _windowLifetime.Token);
+            ShowMainWindow("first_navigation_completed");
         }
         catch (Exception ex)
         {
@@ -474,6 +468,31 @@ internal sealed partial class Win32HostWindow : IHostWindow
         _ = PublishWindowLifecycleEventAsync(
             "window.stateChanged",
             new WindowLifecyclePayload("hidden", "close_to_tray", IsMinimized: false, IsMaximized: false));
+    }
+
+    private void ShowMainWindow(string reason)
+    {
+        if (_hwnd == IntPtr.Zero)
+            return;
+
+        if (NativeMethods.IsIconic(_hwnd))
+        {
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_RESTORE);
+        }
+        else if (!_windowShown)
+        {
+            NativeMethods.ShowWindow(
+                _hwnd,
+                _options.StartMaximized ? NativeMethods.SW_SHOWMAXIMIZED : NativeMethods.SW_SHOW);
+        }
+        else
+        {
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_SHOW);
+        }
+
+        _windowShown = true;
+        NativeMethods.UpdateWindow(_hwnd);
+        _ = PublishWindowStateChangedIfNeededAsync(reason);
     }
 
     private void OnDestroy(IntPtr hwnd)

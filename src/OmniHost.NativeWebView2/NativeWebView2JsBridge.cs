@@ -131,7 +131,7 @@ internal sealed class NativeWebView2JsBridge : IJsBridge, IDisposable
         _core = null;
     }
 
-    private void SetDocumentReady(bool isReady)
+    internal void SetDocumentReady(bool isReady)
     {
         _documentReady = isReady;
 

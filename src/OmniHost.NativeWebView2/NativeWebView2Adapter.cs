@@ -16,6 +16,10 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
     private ComObject<ICoreWebView2Environment>? _environment;
     private ComObject<ICoreWebView2Controller>? _controller;
     private ComObject<ICoreWebView2>? _webView;
+    private CoreWebView2NavigationStartingEventHandler? _navigationStartingHandler;
+    private CoreWebView2NavigationCompletedEventHandler? _navigationCompletedHandler;
+    private EventRegistrationToken _navigationStartingToken;
+    private EventRegistrationToken _navigationCompletedToken;
     private BrowserCapabilities _capabilities = new()
     {
         EngineName = "Native WebView2",
@@ -73,14 +77,37 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         };
 
         ConfigureSettings(_webView.Object, options);
+        RegisterNavigationReadyTracking(_webView.Object);
         await _bridge.InitializeAsync(_webView.Object, cancellationToken);
     }
 
-    public Task NavigateAsync(string url, CancellationToken cancellationToken = default)
+    public async Task NavigateAsync(string url, CancellationToken cancellationToken = default)
     {
         EnsureInitialized();
-        _webView!.Object.Navigate(PWSTR.From(url)).ThrowOnError();
-        return Task.CompletedTask;
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        EventRegistrationToken token = default;
+
+        using var registration = cancellationToken.Register(
+            static state => ((TaskCompletionSource)state!).TrySetCanceled(),
+            completion);
+
+        var handler = new CoreWebView2NavigationCompletedEventHandler((_, _) =>
+        {
+            // 首屏显示只需要等主文档完成一次导航；成功和失败都交给页面自身或 WebView2 错误页呈现。
+            completion.TrySetResult();
+        });
+
+        _webView!.Object.add_NavigationCompleted(handler, ref token).ThrowOnError();
+
+        try
+        {
+            _webView.Object.Navigate(PWSTR.From(url)).ThrowOnError();
+            await completion.Task;
+        }
+        finally
+        {
+            _webView?.Object.remove_NavigationCompleted(token);
+        }
     }
 
     public void Resize(int width, int height)
@@ -93,6 +120,7 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         try
         {
             _bridge.Dispose();
+            UnregisterNavigationReadyTracking();
             _controller?.Object.Close();
         }
         finally
@@ -176,6 +204,32 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         settingsObject.Object.put_IsWebMessageEnabled(BOOL.TRUE).ThrowOnError();
         settingsObject.Object.put_AreDevToolsEnabled(devTools).ThrowOnError();
         settingsObject.Object.put_AreDefaultContextMenusEnabled(devTools).ThrowOnError();
+    }
+
+    private void RegisterNavigationReadyTracking(ICoreWebView2 webView)
+    {
+        _navigationStartingHandler = new CoreWebView2NavigationStartingEventHandler(
+            (_, _) => _bridge.SetDocumentReady(false));
+        webView.add_NavigationStarting(_navigationStartingHandler, ref _navigationStartingToken).ThrowOnError();
+
+        _navigationCompletedHandler = new CoreWebView2NavigationCompletedEventHandler(
+            (_, _) => _bridge.SetDocumentReady(true));
+        webView.add_NavigationCompleted(_navigationCompletedHandler, ref _navigationCompletedToken).ThrowOnError();
+    }
+
+    private void UnregisterNavigationReadyTracking()
+    {
+        if (_webView is null)
+            return;
+
+        if (_navigationStartingHandler is not null)
+            _webView.Object.remove_NavigationStarting(_navigationStartingToken);
+
+        if (_navigationCompletedHandler is not null)
+            _webView.Object.remove_NavigationCompleted(_navigationCompletedToken);
+
+        _navigationStartingHandler = null;
+        _navigationCompletedHandler = null;
     }
 
     private void EnsureInitialized()
