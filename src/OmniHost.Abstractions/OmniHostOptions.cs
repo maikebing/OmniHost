@@ -49,6 +49,11 @@ public class OmniHostOptions
     /// <summary>Whether the Windows runtime should create a tray icon for the main window.</summary>
     public bool EnableTrayIcon { get; set; }
 
+    /// <summary>
+    /// 主窗口收到关闭请求时是否隐藏到托盘；仅在启用托盘图标的主窗口上生效。
+    /// </summary>
+    public bool HideMainWindowOnClose { get; set; }
+
     /// <summary>Tooltip shown when hovering the tray icon.</summary>
     public string? TrayToolTip { get; set; }
 
@@ -118,6 +123,7 @@ public class OmniHostOptions
             UserDataFolder = UserDataFolder,
             IconPath = IconPath,
             EnableTrayIcon = EnableTrayIcon,
+            HideMainWindowOnClose = HideMainWindowOnClose,
             TrayToolTip = TrayToolTip,
             TrayOpenText = TrayOpenText,
             TrayExitText = TrayExitText,

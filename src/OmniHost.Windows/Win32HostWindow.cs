@@ -46,6 +46,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
     private int                         _surfaceHeight;
     private string                      _lastWindowState = "unknown";
     private int                         _closeRequested;
+    private int                         _forceCloseRequested;
     private IntPtr                      _largeIcon;
     private IntPtr                      _smallIcon;
     private bool                        _trayIconCreated;
@@ -133,6 +134,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
             NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_SHOW);
 
         NativeMethods.SetForegroundWindow(_hwnd);
+        _ = PublishWindowStateChangedIfNeededAsync("activate");
     }
 
     // ── Window class registration ─────────────────────────────────────────────
@@ -425,6 +427,12 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
     private async void OnClose(IntPtr hwnd)
     {
+        if (ShouldHideInsteadOfClose())
+        {
+            HideMainWindowToTray();
+            return;
+        }
+
         if (Interlocked.Exchange(ref _closeRequested, 1) != 0)
             return;
 
@@ -450,6 +458,22 @@ internal sealed partial class Win32HostWindow : IHostWindow
         catch { /* ignore errors during shutdown */ }
 
         NativeMethods.DestroyWindow(hwnd);
+    }
+
+    private bool ShouldHideInsteadOfClose()
+        => _windowContext.IsMainWindow
+           && _options.EnableTrayIcon
+           && _options.HideMainWindowOnClose
+           && Volatile.Read(ref _forceCloseRequested) == 0;
+
+    private void HideMainWindowToTray()
+    {
+        NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_HIDE);
+        _lastWindowState = "hidden";
+        // 关闭按钮在托盘模式下只隐藏主窗口，后台代理继续运行，真正退出由托盘菜单触发。
+        _ = PublishWindowLifecycleEventAsync(
+            "window.stateChanged",
+            new WindowLifecyclePayload("hidden", "close_to_tray", IsMinimized: false, IsMaximized: false));
     }
 
     private void OnDestroy(IntPtr hwnd)
@@ -574,6 +598,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
             }
             else if (command == TrayCommandExit)
             {
+                Interlocked.Exchange(ref _forceCloseRequested, 1);
                 NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
             }
             else if (customCommands.TryGetValue(command, out var customCommandId))
