@@ -1,6 +1,7 @@
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using OmniHost.Windows.Frames;
 using OmniHost.Windows.Win32;
 
@@ -11,7 +12,7 @@ namespace OmniHost.Windows;
 /// No WinForms or WPF dependency — window creation and the message loop are
 /// implemented entirely via P/Invoke.
 /// </summary>
-internal sealed class Win32HostWindow : IHostWindow
+internal sealed partial class Win32HostWindow : IHostWindow
 {
     // ── Class registration ────────────────────────────────────────────────────
 
@@ -418,11 +419,9 @@ internal sealed class Win32HostWindow : IHostWindow
         {
             _windowLifetime.Cancel();
 
-            await PublishWindowLifecycleEventAsync("window.closing", new
-            {
-                state = GetCurrentWindowState(),
-                reason = "wm_close",
-            });
+            await PublishWindowLifecycleEventAsync(
+                "window.closing",
+                new WindowLifecyclePayload(GetCurrentWindowState(), "wm_close"));
 
             if (_desktopApp is IWindowAwareDesktopApp windowAwareDesktopApp)
             {
@@ -442,11 +441,11 @@ internal sealed class Win32HostWindow : IHostWindow
 
     private void OnDestroy(IntPtr hwnd)
     {
-        PublishWindowLifecycleEventAsync("window.closed", new
-        {
-            state = GetCurrentWindowState(),
-            reason = "wm_destroy",
-        }).GetAwaiter().GetResult();
+        PublishWindowLifecycleEventAsync(
+            "window.closed",
+            new WindowLifecyclePayload(GetCurrentWindowState(), "wm_destroy"))
+            .GetAwaiter()
+            .GetResult();
 
         // Free the GCHandle stored in GWLP_USERDATA.
         var ptr = NativeMethods.GetWindowLongPtrW(hwnd, NativeMethods.GWLP_USERDATA);
@@ -498,22 +497,24 @@ internal sealed class Win32HostWindow : IHostWindow
             return;
 
         _lastWindowState = nextState;
-        await PublishWindowLifecycleEventAsync("window.stateChanged", new
-        {
-            state = nextState,
-            isMinimized = string.Equals(nextState, "minimized", StringComparison.Ordinal),
-            isMaximized = string.Equals(nextState, "maximized", StringComparison.Ordinal),
-            width = _surfaceWidth,
-            height = _surfaceHeight,
-            reason,
-        });
+        await PublishWindowLifecycleEventAsync(
+            "window.stateChanged",
+            new WindowLifecyclePayload(
+                nextState,
+                reason,
+                string.Equals(nextState, "minimized", StringComparison.Ordinal),
+                string.Equals(nextState, "maximized", StringComparison.Ordinal),
+                _surfaceWidth,
+                _surfaceHeight));
     }
 
-    private async Task PublishWindowLifecycleEventAsync(string eventName, object payload)
+    private async Task PublishWindowLifecycleEventAsync(string eventName, WindowLifecyclePayload payload)
     {
         try
         {
-            await _adapter.JsBridge.PostMessageAsync(eventName, JsonSerializer.Serialize(payload));
+            await _adapter.JsBridge.PostMessageAsync(
+                eventName,
+                JsonSerializer.Serialize(payload, Win32HostWindowJsonContext.Default.WindowLifecyclePayload));
         }
         catch (ObjectDisposedException)
         {
@@ -524,4 +525,16 @@ internal sealed class Win32HostWindow : IHostWindow
             // Ignore lifecycle publishes before the bridge is initialized or after teardown starts.
         }
     }
+
+    private sealed record WindowLifecyclePayload(
+        [property: JsonPropertyName("state")] string State,
+        [property: JsonPropertyName("reason")] string Reason,
+        [property: JsonPropertyName("isMinimized")] bool? IsMinimized = null,
+        [property: JsonPropertyName("isMaximized")] bool? IsMaximized = null,
+        [property: JsonPropertyName("width")] int? Width = null,
+        [property: JsonPropertyName("height")] int? Height = null);
+
+    [JsonSourceGenerationOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSerializable(typeof(WindowLifecyclePayload))]
+    private sealed partial class Win32HostWindowJsonContext : JsonSerializerContext;
 }
