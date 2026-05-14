@@ -21,6 +21,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
     private const uint TrayCommandOpen = 1001;
     private const uint TrayCommandExit = 1002;
     private const uint TrayCustomCommandStart = 2000;
+    private const int ApplicationIconResourceId = 32512;
 
     /// <summary>
     /// Static WndProc delegate stored in a field to prevent GC collection.
@@ -527,10 +528,10 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
         var largeIcon = _largeIcon != IntPtr.Zero
             ? _largeIcon
-            : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION);
+            : LoadApplicationIcon(32, 32);
         var smallIcon = _smallIcon != IntPtr.Zero
             ? _smallIcon
-            : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION);
+            : LoadApplicationIcon(16, 16);
 
         if (largeIcon != IntPtr.Zero)
             NativeMethods.SendMessageW(_hwnd, NativeMethods.WM_SETICON, (IntPtr)NativeMethods.ICON_BIG, largeIcon);
@@ -546,7 +547,7 @@ internal sealed partial class Win32HostWindow : IHostWindow
 
         var trayIcon = _smallIcon != IntPtr.Zero
             ? _smallIcon
-            : (_largeIcon != IntPtr.Zero ? _largeIcon : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION));
+            : (_largeIcon != IntPtr.Zero ? _largeIcon : LoadApplicationIcon(16, 16));
         if (trayIcon == IntPtr.Zero)
             return;
 
@@ -762,6 +763,27 @@ internal sealed partial class Win32HostWindow : IHostWindow
             width,
             height,
             NativeMethods.LR_LOADFROMFILE | NativeMethods.LR_DEFAULTSIZE);
+    }
+
+    private static IntPtr LoadApplicationIcon(int width, int height)
+    {
+        var hInstance = NativeMethods.GetModuleHandleW(IntPtr.Zero);
+        if (hInstance == IntPtr.Zero)
+        {
+            return NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION);
+        }
+
+        var icon = NativeMethods.LoadImageW(
+            hInstance,
+            (IntPtr)ApplicationIconResourceId,
+            NativeMethods.IMAGE_ICON,
+            width,
+            height,
+            NativeMethods.LR_DEFAULTSIZE | NativeMethods.LR_SHARED);
+
+        return icon != IntPtr.Zero
+            ? icon
+            : NativeMethods.LoadIconW(IntPtr.Zero, NativeMethods.IDI_APPLICATION);
     }
 
     private void DestroyOwnedIcons()

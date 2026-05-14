@@ -115,6 +115,7 @@ internal static class NativeMethods
     internal const uint MF_SEPARATOR      = 0x0800u;
     internal const uint LR_LOADFROMFILE   = 0x0010u;
     internal const uint LR_DEFAULTSIZE    = 0x0040u;
+    internal const uint LR_SHARED         = 0x8000u;
     internal const uint NIM_ADD           = 0x00000000u;
     internal const uint NIM_MODIFY        = 0x00000001u;
     internal const uint NIM_DELETE        = 0x00000002u;
@@ -280,6 +281,15 @@ internal static class NativeMethods
     internal static extern IntPtr LoadImageW(
         IntPtr hinst,
         string lpszName,
+        uint uType,
+        int cxDesired,
+        int cyDesired,
+        uint fuLoad);
+
+    [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern IntPtr LoadImageW(
+        IntPtr hinst,
+        IntPtr lpszName,
         uint uType,
         int cxDesired,
         int cyDesired,
