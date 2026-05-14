@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using DirectN;
 using DirectN.Extensions.Com;
 using WebView2;
@@ -79,6 +80,8 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         ConfigureSettings(_webView.Object, options);
         RegisterNavigationReadyTracking(_webView.Object);
         await _bridge.InitializeAsync(_webView.Object, cancellationToken);
+        await InjectWindowChromeSupportAsync(_webView.Object, options, cancellationToken);
+        await InjectHostCssAsync(_webView.Object, options, cancellationToken);
     }
 
     public async Task NavigateAsync(string url, CancellationToken cancellationToken = default)
@@ -230,6 +233,161 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
 
         _navigationStartingHandler = null;
         _navigationCompletedHandler = null;
+    }
+
+    private static Task InjectWindowChromeSupportAsync(
+        ICoreWebView2 webView,
+        OmniHostOptions options,
+        CancellationToken cancellationToken)
+    {
+        var windowStyle = options.WindowStyle.ToCssToken();
+        var script = $$"""
+            (function () {
+                var style = {{JsonSerializer.Serialize(windowStyle, NativeWebView2JsonContext.Default.String)}};
+
+                function applyWindowStyle() {
+                    if (!document.documentElement) return;
+                    document.documentElement.style.setProperty('--omni-window-style', style);
+                    document.documentElement.setAttribute('data-omni-window-style', style);
+                }
+
+                function isInteractive(target) {
+                    return !!(target && target.closest('button, input, textarea, select, option, a, label, summary, [omni-no-drag]'));
+                }
+
+                function getDragRegion(target) {
+                    if (!target || isInteractive(target)) return null;
+                    if (style !== 'frameless' && style !== 'vscode') return null;
+                    return target.closest('[omni-drag]');
+                }
+
+                document.addEventListener('DOMContentLoaded', applyWindowStyle);
+                applyWindowStyle();
+
+                document.addEventListener('mousedown', function (e) {
+                    if (e.button !== 0) return;
+                    if (!getDragRegion(e.target)) return;
+                    e.preventDefault();
+                    omni.window.startDrag({
+                        button: e.button + 1,
+                        screenX: e.screenX,
+                        screenY: e.screenY
+                    });
+                }, true);
+
+                document.addEventListener('dblclick', function (e) {
+                    if (e.button !== 0) return;
+                    if (!getDragRegion(e.target)) return;
+                    e.preventDefault();
+                    omni.window.maximize();
+                }, true);
+
+                document.addEventListener('contextmenu', function (e) {
+                    if (!getDragRegion(e.target)) return;
+                    e.preventDefault();
+                    omni.window.showSystemMenu({
+                        screenX: e.screenX,
+                        screenY: e.screenY
+                    });
+                }, true);
+            })();
+            """;
+
+        return AddScriptToExecuteOnDocumentCreatedAsync(webView, script, cancellationToken);
+    }
+
+    private static Task InjectHostCssAsync(
+        ICoreWebView2 webView,
+        OmniHostOptions options,
+        CancellationToken cancellationToken)
+    {
+        var css = BuildHostCss(options);
+        if (string.IsNullOrWhiteSpace(css))
+            return Task.CompletedTask;
+
+        var script = $$"""
+            (function () {
+                var css = {{JsonSerializer.Serialize(css, NativeWebView2JsonContext.Default.String)}};
+                var styleId = 'omni-host-style';
+
+                function ensureHostStyle() {
+                    var existing = document.getElementById(styleId);
+                    if (existing) {
+                        existing.textContent = css;
+                        return;
+                    }
+
+                    var style = document.createElement('style');
+                    style.id = styleId;
+                    style.textContent = css;
+                    (document.head || document.documentElement).appendChild(style);
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', ensureHostStyle, { once: true });
+                }
+
+                ensureHostStyle();
+            })();
+            """;
+
+        return AddScriptToExecuteOnDocumentCreatedAsync(webView, script, cancellationToken);
+    }
+
+    private static string? BuildHostCss(OmniHostOptions options) =>
+        options.ScrollBarMode switch
+        {
+            OmniScrollBarMode.Auto => null,
+            OmniScrollBarMode.Hidden => """
+                html, body {
+                  overflow: hidden !important;
+                }
+
+                ::-webkit-scrollbar {
+                  width: 0 !important;
+                  height: 0 !important;
+                }
+                """,
+            OmniScrollBarMode.VerticalOnly => """
+                html, body {
+                  overflow-x: hidden !important;
+                  overflow-y: auto !important;
+                }
+                """,
+            OmniScrollBarMode.Custom => !string.IsNullOrWhiteSpace(options.ScrollBarCustomCss)
+                ? options.ScrollBarCustomCss
+                : throw new InvalidOperationException(
+                    "ScrollBarMode is Custom, but ScrollBarCustomCss was not provided."),
+            _ => null,
+        };
+
+    private static async Task AddScriptToExecuteOnDocumentCreatedAsync(
+        ICoreWebView2 webView,
+        string script,
+        CancellationToken cancellationToken)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = cancellationToken.Register(
+            static state => ((TaskCompletionSource)state!).TrySetCanceled(),
+            tcs);
+
+        var hr = webView.AddScriptToExecuteOnDocumentCreated(
+            PWSTR.From(script),
+            new CoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler((result, _) =>
+            {
+                if (result.IsError)
+                {
+                    tcs.TrySetException(Marshal.GetExceptionForHR(result)!);
+                    return;
+                }
+
+                tcs.TrySetResult();
+            }));
+
+        if (hr.IsError)
+            tcs.TrySetException(Marshal.GetExceptionForHR(hr)!);
+
+        await tcs.Task;
     }
 
     private void EnsureInitialized()

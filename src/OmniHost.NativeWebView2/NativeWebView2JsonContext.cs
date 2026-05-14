@@ -5,6 +5,7 @@ namespace OmniHost.NativeWebView2;
 [JsonSerializable(typeof(BridgeInvokeMessage))]
 [JsonSerializable(typeof(BridgeEventMessage))]
 [JsonSerializable(typeof(BridgeResponseMessage))]
+[JsonSerializable(typeof(string))]
 internal partial class NativeWebView2JsonContext : JsonSerializerContext;
 
 internal sealed record BridgeInvokeMessage(
