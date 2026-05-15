@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Scripts\native-webview2-bridge.js" LogicalName="OmniHost.NativeWebView2.Scripts.native-webview2-bridge.js" />
     <EmbeddedResource Include="$(PkgMicrosoft_Web_WebView2)\runtimes\win-x64\native\WebView2Loader.dll" LogicalName="runtimes.win-x64.native.WebView2Loader.dll" />
     <EmbeddedResource Include="$(PkgMicrosoft_Web_WebView2)\runtimes\win-x86\native\WebView2Loader.dll" LogicalName="runtimes.win-x86.native.WebView2Loader.dll" />
     <EmbeddedResource Include="$(PkgMicrosoft_Web_WebView2)\runtimes\win-arm64\native\WebView2Loader.dll" LogicalName="runtimes.win-arm64.native.WebView2Loader.dll" />

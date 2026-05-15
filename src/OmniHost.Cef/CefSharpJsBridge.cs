@@ -304,6 +304,8 @@ internal sealed class CefSharpJsBridge : IJsBridge, IDisposable
 
         public Task<object?> Close() => _owner.InvokeFromJavascriptAsync("window.close", null);
 
+        public Task<object?> Exit() => _owner.InvokeFromJavascriptAsync("window.exit", null);
+
         public Task<object?> StartDrag(object? data = null) => _owner.InvokeFromJavascriptAsync("window.startDrag", data);
 
         public Task<object?> ShowSystemMenu(object? data = null) => _owner.InvokeFromJavascriptAsync("window.showSystemMenu", data);

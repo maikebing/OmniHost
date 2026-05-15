@@ -350,6 +350,13 @@ internal sealed partial class Win32HostWindow : IHostWindow
             return Task.FromResult("null");
         });
 
+        bridge.RegisterHandler("window.exit", _ =>
+        {
+            Interlocked.Exchange(ref _forceCloseRequested, 1);
+            NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            return Task.FromResult("null");
+        });
+
         bridge.RegisterHandler("window.startDrag", _ =>
         {
             NativeMethods.ReleaseCapture();

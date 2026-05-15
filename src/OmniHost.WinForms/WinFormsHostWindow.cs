@@ -146,6 +146,12 @@ internal sealed class WinFormsHostWindow : IHostWindow
             return Task.FromResult("null");
         });
 
+        bridge.RegisterHandler("window.exit", _ =>
+        {
+            RequestClose();
+            return Task.FromResult("null");
+        });
+
         bridge.RegisterHandler("window.startDrag", _ =>
         {
             PostToForm(form =>

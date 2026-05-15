@@ -232,6 +232,12 @@ internal sealed class GtkHostWindow : IHostWindow
             return Task.FromResult("null");
         });
 
+        bridge.RegisterHandler("window.exit", _payload =>
+        {
+            RequestClose();
+            return Task.FromResult("null");
+        });
+
         bridge.RegisterHandler("window.startDrag", payload =>
         {
             BeginWindowDrag(payload);

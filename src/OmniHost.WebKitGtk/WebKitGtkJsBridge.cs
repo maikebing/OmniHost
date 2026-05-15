@@ -84,6 +84,7 @@ internal sealed class WebKitGtkJsBridge : IJsBridge
                     minimize: function () { return omniApi.invoke('window.minimize'); },
                     maximize: function () { return omniApi.invoke('window.maximize'); },
                     close: function () { return omniApi.invoke('window.close'); },
+                    exit: function () { return omniApi.invoke('window.exit'); },
                     startDrag: function (data) { return omniApi.invoke('window.startDrag', data); },
                     showSystemMenu: function (data) { return omniApi.invoke('window.showSystemMenu', data); }
                 }
