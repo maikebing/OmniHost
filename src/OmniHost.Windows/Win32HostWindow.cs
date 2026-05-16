@@ -371,11 +371,54 @@ internal sealed partial class Win32HostWindow : IHostWindow
             return Task.FromResult("null");
         });
 
+        bridge.RegisterHandler("window.startResize", payload =>
+        {
+            var hitTest = ResizeDirectionToHitTest(payload);
+            if (hitTest == NativeMethods.HTCLIENT)
+                return Task.FromResult("null");
+
+            NativeMethods.ReleaseCapture();
+            NativeMethods.GetCursorPos(out var pt);
+            var lParam = (IntPtr)unchecked((int)(((uint)(ushort)pt.y << 16) | (uint)(ushort)pt.x));
+            NativeMethods.PostMessageW(_hwnd, NativeMethods.WM_NCLBUTTONDOWN, (IntPtr)hitTest, lParam);
+            return Task.FromResult("null");
+        });
+
         bridge.RegisterHandler("window.showSystemMenu", _ =>
         {
             ShowSystemMenuAtCursor();
             return Task.FromResult("null");
         });
+    }
+
+    private static nint ResizeDirectionToHitTest(string payload)
+    {
+        if (string.IsNullOrWhiteSpace(payload))
+            return NativeMethods.HTCLIENT;
+
+        try
+        {
+            var direction = JsonSerializer.Deserialize(
+                payload,
+                Win32HostWindowJsonContext.Default.WindowResizePayload)?.Direction;
+
+            return direction switch
+            {
+                "top-left" => NativeMethods.HTTOPLEFT,
+                "top" => NativeMethods.HTTOP,
+                "top-right" => NativeMethods.HTTOPRIGHT,
+                "right" => NativeMethods.HTRIGHT,
+                "bottom-right" => NativeMethods.HTBOTTOMRIGHT,
+                "bottom" => NativeMethods.HTBOTTOM,
+                "bottom-left" => NativeMethods.HTBOTTOMLEFT,
+                "left" => NativeMethods.HTLEFT,
+                _ => NativeMethods.HTCLIENT,
+            };
+        }
+        catch (JsonException)
+        {
+            return NativeMethods.HTCLIENT;
+        }
     }
 
     private void ShowSystemMenuAtCursor()
@@ -886,7 +929,11 @@ internal sealed partial class Win32HostWindow : IHostWindow
         [property: JsonPropertyName("width")] int? Width = null,
         [property: JsonPropertyName("height")] int? Height = null);
 
+    private sealed record WindowResizePayload(
+        [property: JsonPropertyName("direction")] string? Direction);
+
     [JsonSourceGenerationOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonSerializable(typeof(WindowLifecyclePayload))]
+    [JsonSerializable(typeof(WindowResizePayload))]
     private sealed partial class Win32HostWindowJsonContext : JsonSerializerContext;
 }

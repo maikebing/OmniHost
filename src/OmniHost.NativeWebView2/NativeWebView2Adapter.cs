@@ -261,11 +261,58 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
                     return target.closest('[omni-drag]');
                 }
 
+                var resizeBorder = 8;
+                var resizeCursors = {
+                    'top-left': 'nwse-resize',
+                    'bottom-right': 'nwse-resize',
+                    'top-right': 'nesw-resize',
+                    'bottom-left': 'nesw-resize',
+                    top: 'ns-resize',
+                    bottom: 'ns-resize',
+                    left: 'ew-resize',
+                    right: 'ew-resize'
+                };
+
+                function getResizeDirection(e) {
+                    if (style !== 'frameless' && style !== 'vscode') return null;
+                    if (!e || window.innerWidth <= 0 || window.innerHeight <= 0) return null;
+                    if (isInteractive(e.target)) return null;
+
+                    var x = e.clientX;
+                    var y = e.clientY;
+                    var left = x <= resizeBorder;
+                    var right = x >= window.innerWidth - resizeBorder;
+                    var top = y <= resizeBorder;
+                    var bottom = y >= window.innerHeight - resizeBorder;
+
+                    if (top && left) return 'top-left';
+                    if (top && right) return 'top-right';
+                    if (bottom && left) return 'bottom-left';
+                    if (bottom && right) return 'bottom-right';
+                    if (top) return 'top';
+                    if (bottom) return 'bottom';
+                    if (left) return 'left';
+                    if (right) return 'right';
+                    return null;
+                }
+
+                function setResizeCursor(direction) {
+                    if (!document.body) return;
+                    document.body.style.cursor = direction ? resizeCursors[direction] : '';
+                }
+
                 document.addEventListener('DOMContentLoaded', applyWindowStyle);
                 applyWindowStyle();
 
                 document.addEventListener('mousedown', function (e) {
                     if (e.button !== 0) return;
+                    var resizeDirection = getResizeDirection(e);
+                    if (resizeDirection) {
+                        e.preventDefault();
+                        omni.window.startResize({ direction: resizeDirection });
+                        return;
+                    }
+
                     if (!getDragRegion(e.target)) return;
                     e.preventDefault();
                     omni.window.startDrag({
@@ -273,6 +320,14 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
                         screenX: e.screenX,
                         screenY: e.screenY
                     });
+                }, true);
+
+                document.addEventListener('mousemove', function (e) {
+                    setResizeCursor(getResizeDirection(e));
+                }, true);
+
+                document.addEventListener('mouseleave', function () {
+                    setResizeCursor(null);
                 }, true);
 
                 document.addEventListener('dblclick', function (e) {

@@ -70,6 +70,7 @@ internal sealed class WebView2JsBridge : IJsBridge
                     close: function () { return omniApi.invoke('window.close'); },
                     exit: function () { return omniApi.invoke('window.exit'); },
                     startDrag: function (data) { return omniApi.invoke('window.startDrag', data); },
+                    startResize: function (data) { return omniApi.invoke('window.startResize', data); },
                     showSystemMenu: function (data) { return omniApi.invoke('window.showSystemMenu', data); }
                 }
             };
