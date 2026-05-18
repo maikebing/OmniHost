@@ -2,7 +2,7 @@ namespace OmniHost;
 
 /// <summary>
 /// Abstraction for the platform-specific desktop runtime (message loop + window host).
-/// Implement this interface to support a new UI framework (WinForms, WPF, Avalonia, …).
+/// Implement this interface to support a native OS runtime such as Win32, GTK, or AppKit.
 /// </summary>
 public interface IDesktopRuntime
 {

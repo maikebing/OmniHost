@@ -9,7 +9,7 @@ title: OmniHost
 
 **A cross-platform .NET desktop WebView hosting framework.**
 
-OmniHost lets you build desktop applications powered by a web front-end, using whichever browser engine is available on the host platform: WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux, or CEF as a future cross-platform option.
+OmniHost lets you build desktop applications powered by a web front-end, using native OS windows and native OS WebViews: WebView2 on Windows, WKWebView on macOS, and WebKitGTK on Linux.
 
 ## Navigation
 
@@ -24,5 +24,6 @@ OmniHost lets you build desktop applications powered by a web front-end, using w
 
 ## Current Status
 
-Version **0.1.0-preview.3**: Windows/WebView2 is still the most complete path and remains the first-class MVP target.
-Linux now also has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` path with GTK host-window support, WebKitGTK embedding, bridge wiring, and native `app://` custom-scheme asset loading in place.
+Version **0.1.0-preview.3**: Windows now uses the raw Win32 runtime with `OmniHost.NativeWebView2`.
+Linux has an experimental `OmniHost.Gtk` + `OmniHost.WebKitGtk` path with GTK host-window support, WebKitGTK embedding, bridge wiring, and native `app://` custom-scheme asset loading.
+The macOS target is AppKit + WKWebView.

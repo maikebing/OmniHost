@@ -1,6 +1,6 @@
 using System.Text.Json;
 using OmniHost;
-using OmniHost.WebView2;
+using OmniHost.NativeWebView2;
 using OmniHost.Windows;
 
 var app = OmniApp.CreateBuilder(args)
@@ -39,7 +39,7 @@ var app = OmniApp.CreateBuilder(args)
         options.WindowStyle = OmniWindowStyle.Frameless;
         options.BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.Office;
     })
-    .UseAdapter(new WebView2AdapterFactory())
+    .UseAdapter(new NativeWebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
     .UseDesktopApp(new WindowStylesApp())
     .Build();

@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using DirectN;
 using DirectN.Extensions.Com;
+using DirectN.Extensions.Utilities;
 using WebView2;
 using WebView2.Utilities;
 
@@ -19,15 +20,17 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
     private ComObject<ICoreWebView2>? _webView;
     private CoreWebView2NavigationStartingEventHandler? _navigationStartingHandler;
     private CoreWebView2NavigationCompletedEventHandler? _navigationCompletedHandler;
+    private CoreWebView2WebResourceRequestedEventHandler? _webResourceRequestedHandler;
     private EventRegistrationToken _navigationStartingToken;
     private EventRegistrationToken _navigationCompletedToken;
+    private EventRegistrationToken _webResourceRequestedToken;
     private BrowserCapabilities _capabilities = new()
     {
         EngineName = "Native WebView2",
         EngineVersion = "unknown",
         SupportsJavaScript = true,
         SupportsJsBridge = true,
-        SupportsCustomSchemes = false,
+        SupportsCustomSchemes = true,
         SupportsDevTools = true,
         SupportedHostSurfaces = new[] { HostSurfaceKind.Hwnd },
     };
@@ -60,7 +63,7 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         var userDataFolder = options.UserDataFolder
             ?? Path.Combine(Path.GetTempPath(), "OmniHost", SanitizeFolderName(options.Title));
 
-        _environment = await CreateEnvironmentAsync(userDataFolder, cancellationToken);
+        _environment = await CreateEnvironmentAsync(userDataFolder, options, cancellationToken);
         _controller = await CreateControllerAsync(_environment.Object, surface.Handle, cancellationToken);
         _controller.Object.put_IsVisible(BOOL.TRUE).ThrowOnError();
         _controller.Object.get_CoreWebView2(out var core).ThrowOnError();
@@ -72,15 +75,17 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
             EngineVersion = browserVersion,
             SupportsJavaScript = true,
             SupportsJsBridge = true,
-            SupportsCustomSchemes = false,
+            SupportsCustomSchemes = true,
             SupportsDevTools = true,
             SupportedHostSurfaces = new[] { HostSurfaceKind.Hwnd },
         };
 
         ConfigureSettings(_webView.Object, options);
         RegisterNavigationReadyTracking(_webView.Object);
+        RegisterCustomScheme(_webView.Object, options);
         await _bridge.InitializeAsync(_webView.Object, cancellationToken);
         await InjectWindowChromeSupportAsync(_webView.Object, options, cancellationToken);
+        await InjectBuiltInTitleBarAsync(_webView.Object, options, cancellationToken);
         await InjectHostCssAsync(_webView.Object, options, cancellationToken);
     }
 
@@ -124,6 +129,7 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         {
             _bridge.Dispose();
             UnregisterNavigationReadyTracking();
+            UnregisterCustomScheme();
             _controller?.Object.Close();
         }
         finally
@@ -138,6 +144,7 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
 
     private static Task<ComObject<ICoreWebView2Environment>> CreateEnvironmentAsync(
         string userDataFolder,
+        OmniHostOptions options,
         CancellationToken cancellationToken)
     {
         var tcs = new TaskCompletionSource<ComObject<ICoreWebView2Environment>>(
@@ -146,25 +153,52 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
             static state => ((TaskCompletionSource<ComObject<ICoreWebView2Environment>>)state!).TrySetCanceled(),
             tcs);
 
+        var environmentOptions = CreateEnvironmentOptions(options);
         var hr = WebView2.Functions.CreateCoreWebView2EnvironmentWithOptions(
             PWSTR.Null,
             PWSTR.From(userDataFolder),
-            null!,
+            environmentOptions,
             new CoreWebView2CreateCoreWebView2EnvironmentCompletedHandler((result, environment) =>
             {
-                if (result.IsError)
+                try
                 {
-                    tcs.TrySetException(Marshal.GetExceptionForHR(result)!);
-                    return;
-                }
+                    if (result.IsError)
+                    {
+                        tcs.TrySetException(Marshal.GetExceptionForHR(result)!);
+                        return;
+                    }
 
-                tcs.TrySetResult(new ComObject<ICoreWebView2Environment>(environment));
+                    tcs.TrySetResult(new ComObject<ICoreWebView2Environment>(environment));
+                }
+                finally
+                {
+                    environmentOptions.Dispose();
+                }
             }));
 
         if (hr.IsError)
+        {
+            environmentOptions.Dispose();
             tcs.TrySetException(Marshal.GetExceptionForHR(hr)!);
+        }
 
         return tcs.Task;
+    }
+
+    private static CoreWebView2EnvironmentOptions CreateEnvironmentOptions(OmniHostOptions options)
+    {
+        var environmentOptions = new CoreWebView2EnvironmentOptions();
+
+        if (!string.IsNullOrWhiteSpace(options.ContentRootPath))
+        {
+            var customScheme = new CoreWebView2CustomSchemeRegistration(options.CustomScheme);
+            customScheme.put_HasAuthorityComponent(BOOL.TRUE).ThrowOnError();
+            customScheme.put_TreatAsSecure(BOOL.TRUE).ThrowOnError();
+            customScheme.SetAllowedOrigins([$"{options.CustomScheme}://*"]);
+            environmentOptions.SetCustomSchemeRegistrations([customScheme]);
+        }
+
+        return environmentOptions;
     }
 
     private static Task<ComObject<ICoreWebView2Controller>> CreateControllerAsync(
@@ -233,6 +267,85 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
 
         _navigationStartingHandler = null;
         _navigationCompletedHandler = null;
+    }
+
+    private void RegisterCustomScheme(ICoreWebView2 webView, OmniHostOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.ContentRootPath) || _environment is null)
+            return;
+
+        var filter = $"{options.CustomScheme}://*";
+        webView.AddWebResourceRequestedFilter(
+            PWSTR.From(filter),
+            COREWEBVIEW2_WEB_RESOURCE_CONTEXT.COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL).ThrowOnError();
+
+        _webResourceRequestedHandler = new CoreWebView2WebResourceRequestedEventHandler(
+            (_, args) => HandleWebResourceRequest(args, options.ContentRootPath, _environment.Object));
+
+        webView.add_WebResourceRequested(_webResourceRequestedHandler, ref _webResourceRequestedToken).ThrowOnError();
+    }
+
+    private void UnregisterCustomScheme()
+    {
+        if (_webView is null || _webResourceRequestedHandler is null)
+            return;
+
+        _webView.Object.remove_WebResourceRequested(_webResourceRequestedToken);
+        _webResourceRequestedHandler = null;
+    }
+
+    private static void HandleWebResourceRequest(
+        ICoreWebView2WebResourceRequestedEventArgs args,
+        string contentRootPath,
+        ICoreWebView2Environment environment)
+    {
+        args.get_Request(out var request).ThrowOnError();
+        request.get_Uri(out var requestUri).ThrowOnError();
+        var uriText = ToStringAndFree(requestUri);
+        if (uriText is null || !Uri.TryCreate(uriText, UriKind.Absolute, out var uri))
+        {
+            SetWebResourceResponse(args, environment, Stream.Null, 400, "Bad Request", "text/plain");
+            return;
+        }
+
+        var relative = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/'))
+            .Replace('/', Path.DirectorySeparatorChar);
+        var root = Path.GetFullPath(contentRootPath);
+        var fullPath = Path.GetFullPath(Path.Combine(root, relative));
+
+        if (!IsPathInsideRoot(fullPath, root))
+        {
+            SetWebResourceResponse(args, environment, Stream.Null, 403, "Forbidden", "text/plain");
+            return;
+        }
+
+        if (!File.Exists(fullPath))
+        {
+            SetWebResourceResponse(args, environment, Stream.Null, 404, "Not Found", "text/plain");
+            return;
+        }
+
+        var stream = File.OpenRead(fullPath);
+        SetWebResourceResponse(args, environment, stream, 200, "OK", GetMimeType(fullPath));
+    }
+
+    private static void SetWebResourceResponse(
+        ICoreWebView2WebResourceRequestedEventArgs args,
+        ICoreWebView2Environment environment,
+        Stream stream,
+        int statusCode,
+        string reasonPhrase,
+        string contentType)
+    {
+        var content = new ManagedIStream(stream, owned: true);
+        environment.CreateWebResourceResponse(
+            content,
+            statusCode,
+            PWSTR.From(reasonPhrase),
+            PWSTR.From($"Content-Type: {contentType}\r\n"),
+            out var response).ThrowOnError();
+
+        args.put_Response(response).ThrowOnError();
     }
 
     private static Task InjectWindowChromeSupportAsync(
@@ -351,6 +464,17 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
         return AddScriptToExecuteOnDocumentCreatedAsync(webView, script, cancellationToken);
     }
 
+    private static Task InjectBuiltInTitleBarAsync(
+        ICoreWebView2 webView,
+        OmniHostOptions options,
+        CancellationToken cancellationToken)
+    {
+        var script = BuiltInTitleBarScriptBuilder.Build(options);
+        return string.IsNullOrWhiteSpace(script)
+            ? Task.CompletedTask
+            : AddScriptToExecuteOnDocumentCreatedAsync(webView, script, cancellationToken);
+    }
+
     private static Task InjectHostCssAsync(
         ICoreWebView2 webView,
         OmniHostOptions options,
@@ -456,5 +580,48 @@ public sealed class NativeWebView2Adapter : IWebViewAdapter
     {
         var invalid = Path.GetInvalidFileNameChars();
         return new string(name.Select(c => Array.IndexOf(invalid, c) >= 0 ? '_' : c).ToArray());
+    }
+
+    private static string GetMimeType(string path)
+        => Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".html" or ".htm" => "text/html; charset=utf-8",
+            ".js" => "text/javascript; charset=utf-8",
+            ".css" => "text/css; charset=utf-8",
+            ".json" => "application/json; charset=utf-8",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".svg" => "image/svg+xml",
+            ".ico" => "image/x-icon",
+            ".wasm" => "application/wasm",
+            ".map" => "application/json; charset=utf-8",
+            ".txt" => "text/plain; charset=utf-8",
+            _ => "application/octet-stream",
+        };
+
+    private static bool IsPathInsideRoot(string fullPath, string root)
+    {
+        var normalizedRoot = root.EndsWith(Path.DirectorySeparatorChar)
+            ? root
+            : root + Path.DirectorySeparatorChar;
+
+        return fullPath.Equals(root, StringComparison.OrdinalIgnoreCase) ||
+               fullPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ToStringAndFree(PWSTR value)
+    {
+        if (value.Value == 0)
+            return null;
+
+        try
+        {
+            return value.ToString();
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(value.Value);
+        }
     }
 }

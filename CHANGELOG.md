@@ -9,10 +9,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `OmniHost.NativeWebView2`, the Windows WebView2 adapter based on WebView2Aot COM bindings.
+- Native WebView2 support for `app://localhost/...` local asset loading and built-in title-bar injection.
 - Windows window-style presets now include:
   - `OmniWindowStyle.DwmBlurGlass`
   - `OmniWindowStyle.VsCode`
-- `OmniHost.WinForms`, an optional Windows Forms runtime and host-window package.
 - The WebView host bridge now exposes multi-value window style tokens to the page root via:
   - `--omni-window-style`
   - `data-omni-window-style`
@@ -44,11 +45,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Windows samples now use `OmniHost.NativeWebView2` with `OmniHost.Windows`.
 - `DwmBlurGlass` support in `OmniHost.Windows` is implemented as an app-local, public-DWM-API preset.
   It does not embed the external `DWMBlurGlass` project's system-wide hook/injection pipeline.
 
 ### Changed - breaking
 
+- Removed `OmniHost.WinForms`, `OmniHost.WebView2`, `OmniHost.Cef`, and `samples/OmniHost.Sample.Cef`.
+- Windows applications should use `OmniHost.Windows` with `OmniHost.NativeWebView2`.
 - Renamed the technical package / namespace family from `OmniWebHost*` to `OmniHost*`.
 - Solution, project files, assembly names, namespaces, and samples now use:
   - `OmniHost`
@@ -56,7 +60,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `OmniHost.Core`
   - `OmniHost.Hosting`
   - `OmniHost.Windows`
-  - `OmniHost.WebView2`
+  - `OmniHost.NativeWebView2`
 - `UseOmniWebHost()` was renamed to `UseOmniHost()`.
 - `OmniWebHostOptions`, `OmniWebHostBuilder`, and related `OmniWebHost*` type names
   were renamed to their `OmniHost*` equivalents.

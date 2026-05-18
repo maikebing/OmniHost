@@ -6,94 +6,55 @@ title: Architecture
 
 ## Overview
 
-OmniHost is structured as layered packages with clear boundaries:
+OmniHost is split into shared host coordination, native OS runtimes, and native WebView adapters:
 
 - application code configures the host
-- `OmniHost` exposes the entry point and builder surface
-- `OmniHost.Core` coordinates runtime, windows, and adapters
-- `OmniHost.Abstractions` defines the shared contracts
-- platform runtimes such as `OmniHost.Windows` and `OmniHost.Gtk` provide native window hosting
-- optional runtimes such as `OmniHost.WinForms` can offer alternate host-window implementations on the same OS
-- browser adapters such as `OmniHost.WebView2` and `OmniHost.WebKitGtk` provide engine-specific embedding
+- `OmniHost` exposes `OmniApp.CreateBuilder`
+- `OmniHost.Core` coordinates windows and adapters
+- `OmniHost.Abstractions` defines shared contracts
+- platform runtimes create native windows and run native event loops
+- browser adapters embed the platform WebView into the host surface
+
+The project intentionally avoids WinForms, WPF, CefSharp.WinForms, Electron, Tauri, MAUI, Avalonia, or other extra desktop shells as core runtime paths.
 
 ## Packages
 
 | Package | Role |
 |---------|------|
-| `OmniHost.Abstractions` | Public interfaces and model types. No implementation code. |
-| `OmniHost.Core` | Builder pattern, `OmniHostApp` runner, and host-window coordination. |
-| `OmniHost` | Top-level package exposing `OmniApp.CreateBuilder`. |
-| `OmniHost.Hosting` | Integration with `Microsoft.Extensions.Hosting`. |
-| `OmniHost.Windows` | Windows runtime and raw Win32 host-window implementation. |
-| `OmniHost.WinForms` | Optional Windows Forms runtime and host-window implementation. |
-| `OmniHost.Gtk` | First-pass Linux GTK runtime and host-window implementation. |
-| `OmniHost.WebView2` | Microsoft WebView2 adapter for Windows. |
-| `OmniHost.WebKitGtk` | Experimental WebKitGTK adapter for Linux / GTK widget host surfaces. |
+| `OmniHost.Abstractions` | Public interfaces and model types |
+| `OmniHost.Core` | Builder pattern, app runner, and host-window coordination |
+| `OmniHost` | Top-level package exposing `OmniApp.CreateBuilder` |
+| `OmniHost.Hosting` | Integration with `Microsoft.Extensions.Hosting` |
+| `OmniHost.Windows` | Raw Win32 runtime and host-window implementation |
+| `OmniHost.NativeWebView2` | Native WebView2 adapter for Windows |
+| `OmniHost.Gtk` | GTK runtime and host-window implementation for Linux |
+| `OmniHost.WebKitGtk` | WebKitGTK adapter for Linux |
+
+Planned macOS packages are an AppKit runtime and WKWebView adapter.
+
+## Platform Choice
+
+| OS | Runtime | Adapter | Notes |
+|----|---------|---------|-------|
+| Windows | raw Win32 | Native WebView2 | primary, AOT-friendly |
+| Linux | GTK 3 | WebKitGTK | package GTK/WebKitGTK with the app when needed |
+| macOS | AppKit | WKWebView | planned native path |
 
 ## Key Interfaces
 
-### `IWebViewAdapter`
+`IWebViewAdapter` represents a browser engine instance. It initializes against a typed host surface, navigates, resizes, and exposes the JS bridge.
 
-Represents a browser engine instance.
-Responsibilities: initialize the WebView against a typed host surface, navigate, and expose the JS bridge.
+`IWebViewAdapterFactory` creates adapters and reports whether the native engine is available.
 
-### `IWebViewAdapterFactory`
+`IHostWindow` represents a concrete native host window and the browser attachment surface it exposes.
 
-Creates `IWebViewAdapter` instances and reports availability.
-Register one per supported engine via DI or pass it to the builder directly.
+`IHostWindowFactory` creates platform-specific host windows while the runtime owns the event loop.
 
-### `IHostWindow`
+`IDesktopRuntime` owns platform threading and message-loop orchestration.
 
-Represents a concrete native host window and the browser attachment surface it exposes.
+`IMultiWindowDesktopRuntime` extends a runtime with startup and dynamic multi-window support.
 
-### `IHostWindowFactory`
-
-Creates platform-specific host windows so a runtime can keep its thread/event-loop responsibility separate from the actual native window implementation.
-
-### `IWindowFrameStrategy`
-
-Represents how a native host window presents and manages its frame, such as a standard system frame or a custom DWM-backed frameless implementation.
-
-### `IJsBridge`
-
-Bidirectional channel between .NET and JavaScript running in the WebView.
-
-### `IDesktopApp`
-
-Optional lifecycle callbacks (`OnStartAsync`, `OnClosingAsync`) for the host application.
-These callbacks run once per created host window.
-
-### `IWindowAwareDesktopApp`
-
-Optional context-aware desktop-app contract that receives `OmniWindowContext` for each window and can coordinate dynamic multi-window behavior.
-
-### `IMultiWindowDesktopRuntime`
-
-Optional runtime extension used when the builder declares additional startup windows.
-
-### `OmniWindowDefinition`
-
-Public startup-window descriptor used by `OmniHostBuilder.AddWindow(...)`.
-
-### `OmniWindowContext`
-
-Per-window context containing the window id, startup options snapshot, browser adapter, and current window manager.
-
-### `IOmniWindowManager`
-
-Runtime window-management API for enumerating open windows, opening additional windows, activating or closing a specific window, retrieving live window contexts by id, and posting or broadcasting host events.
-
-### `BrowserCapabilities`
-
-Describes what a given adapter can do, including DevTools, custom-scheme support, JS bridge support, and compatible host-surface kinds.
-
-### `HostWindowCoordinator`
-
-Coordinator in `OmniHost.Core` that creates adapters, creates host windows, tracks the current open-window set, and runs each window through the selected runtime.
-It owns internal window definitions and window snapshots so both main and auxiliary windows can reuse the same coordination path.
-Each tracked window keeps its own cloned `OmniHostOptions` instance.
-
-The same coordinator/runtime/window-manager pattern now backs `OmniHost.Windows`, `OmniHost.WinForms`, and the first-pass `OmniHost.Gtk` runtime so cross-platform host implementations can share one multi-window control flow.
+`IWindowAwareDesktopApp`, `OmniWindowContext`, and `IOmniWindowManager` provide per-window lifecycle and dynamic window operations.
 
 ## Entry Point Flow
 
@@ -102,14 +63,15 @@ OmniApp.CreateBuilder(args)
   -> OmniHostBuilder
     .Configure(...)         -> set OmniHostOptions
     .UseAdapter(factory)    -> register adapter factory
+    .UseRuntime(runtime)    -> select native OS runtime
     .Build()
   -> IOmniHostApp
     .RunAsync()
       -> HostWindowCoordinator.RunMainWindow(...)
       -> IWebViewAdapterFactory.Create()
-      -> validate adapter -> host-surface compatibility
+      -> validate adapter and host-surface compatibility
       -> IHostWindowFactory.Create(...)
       -> IWebViewAdapter.InitializeAsync(surface, options)
       -> IWebViewAdapter.NavigateAsync(options.StartUrl)
-      -> run message loop
+      -> run native message loop
 ```

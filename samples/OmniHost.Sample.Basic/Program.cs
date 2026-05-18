@@ -1,6 +1,6 @@
 using System.Text.Json;
 using OmniHost;
-using OmniHost.WebView2;
+using OmniHost.NativeWebView2;
 using OmniHost.Windows;
 
 var app = OmniApp.CreateBuilder(args)
@@ -33,7 +33,7 @@ var app = OmniApp.CreateBuilder(args)
         options.Height = 440;
         options.WindowStyle = OmniWindowStyle.DwmBlurGlass;
     })
-    .UseAdapter(new WebView2AdapterFactory())
+    .UseAdapter(new NativeWebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
     .UseDesktopApp(new SampleApp())
     .Build();

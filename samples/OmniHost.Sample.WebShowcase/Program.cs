@@ -4,9 +4,9 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using OmniHost;
+using OmniHost.NativeWebView2;
 using OmniHost.Sample.WebShowcase.Models;
 using OmniHost.Sample.WebShowcase.Services;
-using OmniHost.WebView2;
 using OmniHost.Windows;
 
 var port = GetFreeTcpPort();
@@ -84,7 +84,7 @@ var app = OmniApp.CreateBuilder(args)
         options.WindowStyle = OmniWindowStyle.VsCode;
         options.BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.VsCode;
     })
-    .UseAdapter(new WebView2AdapterFactory())
+    .UseAdapter(new NativeWebView2AdapterFactory())
     .UseRuntime(new Win32Runtime())
     .UseDesktopApp(new WebShowcaseDesktopApp(serverUrl))
     .Build();

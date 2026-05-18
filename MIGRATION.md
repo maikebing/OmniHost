@@ -1,8 +1,8 @@
 # Migration Guide
 
-This guide covers the rename from `OmniWebHost*` to `OmniHost*`.
+This guide covers the rename from `OmniWebHost*` to `OmniHost*` and the native-shell cleanup.
 
-## What changed
+## Rename
 
 - Repository name: `OmniWebHost` -> `OmniHost`
 - Solution file: `OmniWebHost.sln` -> `OmniHost.sln`
@@ -12,63 +12,62 @@ This guide covers the rename from `OmniWebHost*` to `OmniHost*`.
   - `OmniWebHost.Core` -> `OmniHost.Core`
   - `OmniWebHost.Hosting` -> `OmniHost.Hosting`
   - `OmniWebHost.Windows` -> `OmniHost.Windows`
-  - `OmniWebHost.WebView2` -> `OmniHost.WebView2`
 
-## Common source changes
+## Windows Adapter Change
 
-Update `using` directives:
+Use `OmniHost.NativeWebView2` instead of the removed `OmniHost.WebView2` package:
 
 ```csharp
 using OmniHost;
+using OmniHost.NativeWebView2;
 using OmniHost.Windows;
-using OmniHost.WebView2;
+
+var app = OmniApp.CreateBuilder(args)
+    .Configure(options =>
+    {
+        options.StartUrl = "app://localhost/index.html";
+        options.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+    })
+    .UseAdapter(new NativeWebView2AdapterFactory())
+    .UseRuntime(new Win32Runtime())
+    .Build();
 ```
 
-Update renamed types and APIs:
-
-```csharp
-// before
-var app = OmniApp.CreateBuilder(args);
-IHostBuilder builder = ...;
-builder.UseOmniWebHost();
-
-// key renamed symbols
-// OmniWebHostOptions -> OmniHostOptions
-// OmniWebHostBuilder -> OmniHostBuilder
-// IOmniWebHostApp -> IOmniHostApp
-// UseOmniWebHost() -> UseOmniHost()
-```
-
-## Project file changes
-
-Update package or project references:
+Update project references:
 
 ```xml
 <ProjectReference Include="..\\..\\src\\OmniHost\\OmniHost.csproj" />
 <ProjectReference Include="..\\..\\src\\OmniHost.Windows\\OmniHost.Windows.csproj" />
-<ProjectReference Include="..\\..\\src\\OmniHost.WebView2\\OmniHost.WebView2.csproj" />
+<ProjectReference Include="..\\..\\src\\OmniHost.NativeWebView2\\OmniHost.NativeWebView2.csproj" />
 ```
 
-NuGet package ids now follow the same `OmniHost*` naming:
+Or package references:
 
 ```bash
 dotnet add package OmniHost
 dotnet add package OmniHost.Windows
-dotnet add package OmniHost.WebView2
+dotnet add package OmniHost.NativeWebView2
 ```
 
-## Local repo rename
+## Removed Paths
 
-If you cloned the repository before the rename, you can either reclone it or rename
-your local working folder from `OmniWebHost` to `OmniHost`.
+The following packages/projects were removed from the supported framework surface:
 
-## Remote URL note
+- `OmniHost.WinForms`
+- `OmniHost.WebView2`
+- `OmniHost.Cef`
+- `samples/OmniHost.Sample.Cef`
 
-If the Git hosting repository is also renamed, update your local remote after the
-server-side rename is complete:
+Use the native OS paths instead:
+
+- Windows: `OmniHost.Windows` + `OmniHost.NativeWebView2`
+- Linux: `OmniHost.Gtk` + `OmniHost.WebKitGtk`
+- macOS: AppKit + WKWebView, planned
+
+## Remote URL Note
+
+If the Git hosting repository is renamed, update your local remote after the server-side rename is complete:
 
 ```bash
 git remote set-url origin https://github.com/<owner>/OmniHost.git
 ```
-
-Do this only after the remote repository actually exists at the new URL.

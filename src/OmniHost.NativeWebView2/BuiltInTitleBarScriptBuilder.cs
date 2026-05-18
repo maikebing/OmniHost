@@ -1,4 +1,6 @@
-namespace OmniHost.WebView2;
+using System.Text.Json;
+
+namespace OmniHost.NativeWebView2;
 
 internal static class BuiltInTitleBarScriptBuilder
 {
@@ -8,7 +10,6 @@ internal static class BuiltInTitleBarScriptBuilder
         if (string.Equals(preset, "none", StringComparison.Ordinal))
             return null;
 
-        var title = options.Title;
         var height = options.BuiltInTitleBarStyle == OmniBuiltInTitleBarStyle.Office ? 44 : 36;
         var css = options.BuiltInTitleBarStyle switch
         {
@@ -45,15 +46,13 @@ internal static class BuiltInTitleBarScriptBuilder
             _ => string.Empty,
         };
 
+        var config = JsonSerializer.Serialize(
+            new BuiltInTitleBarConfig(preset, options.Title, height, css, html),
+            NativeWebView2JsonContext.Default.BuiltInTitleBarConfig);
+
         return $$"""
             (function () {
-                var config = {
-                    preset: {{System.Text.Json.JsonSerializer.Serialize(preset)}},
-                    title: {{System.Text.Json.JsonSerializer.Serialize(title)}},
-                    height: {{height}},
-                    css: {{System.Text.Json.JsonSerializer.Serialize(css)}},
-                    html: {{System.Text.Json.JsonSerializer.Serialize(html)}}
-                };
+                var config = {{config}};
 
                 function applyBuiltInTitleBar() {
                     if (!document.documentElement || !document.body) return;

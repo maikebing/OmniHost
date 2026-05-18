@@ -4,7 +4,7 @@ using OmniHost.Core;
 using OmniHost.Gtk;
 using OmniHost.WebKitGtk;
 #if WINDOWS
-using OmniHost.WebView2;
+using OmniHost.NativeWebView2;
 using OmniHost.Windows;
 #endif
 
@@ -49,14 +49,14 @@ static void ConfigureCurrentPlatform(OmniHostBuilder builder)
 #if WINDOWS
     if (OperatingSystem.IsWindows())
     {
-        builder.UseAdapter(new WebView2AdapterFactory())
+        builder.UseAdapter(new NativeWebView2AdapterFactory())
             .UseRuntime(new Win32Runtime());
         return;
     }
 #endif
 
     throw new PlatformNotSupportedException(
-        "This sample currently supports Windows (WebView2) and Linux (GTK + WebKitGTK).");
+        "This sample currently supports Windows (Native WebView2) and Linux (GTK + WebKitGTK).");
 }
 
 sealed class SampleApp : IWindowAwareDesktopApp
