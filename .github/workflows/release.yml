@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 10.0.x
   CONFIGURATION: Release
 
 jobs:
@@ -41,30 +41,25 @@ jobs:
 
           "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      - name: Restore solution and source projects
+      - name: Restore
         shell: pwsh
-        run: |
-          dotnet restore OmniHost.sln
+        run: dotnet restore NativeWebHost.sln
 
-          $sourceRoot = Join-Path $env:GITHUB_WORKSPACE "src"
-          $projects = Get-ChildItem $sourceRoot -Recurse -Filter *.csproj | Sort-Object FullName
-          foreach ($project in $projects) {
-            dotnet restore $project.FullName
-            if ($LASTEXITCODE -ne 0) {
-              exit $LASTEXITCODE
-            }
-          }
-
-      - name: Pack source projects
+      - name: Pack four public packages
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.version.outputs.value }}
         run: |
           New-Item -ItemType Directory -Path artifacts\nuget -Force | Out-Null
-          $projects = Get-ChildItem src -Recurse -Filter *.csproj | Sort-Object FullName
+          $projects = @(
+            "src\NativeWebHost\NativeWebHost.csproj",
+            "src\NativeWebHost.Windows\NativeWebHost.Windows.csproj",
+            "src\NativeWebHost.Linux\NativeWebHost.Linux.csproj",
+            "src\NativeWebHost.Mac\NativeWebHost.Mac.csproj"
+          )
 
           foreach ($project in $projects) {
-            dotnet pack $project.FullName `
+            dotnet pack $project `
               -c $env:CONFIGURATION `
               --no-restore `
               -o artifacts\nuget `
@@ -98,6 +93,28 @@ jobs:
             }
           }
 
+      - name: Publish packages to NuGet.org
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+            Write-Host "NUGET_API_KEY is not configured; skipping NuGet.org publish."
+            exit 0
+          }
+
+          $packages = Get-ChildItem artifacts\nuget -Filter *.nupkg | Sort-Object Name
+          foreach ($package in $packages) {
+            dotnet nuget push $package.FullName `
+              --source "https://api.nuget.org/v3/index.json" `
+              --api-key $env:NUGET_API_KEY `
+              --skip-duplicate
+
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          }
+
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -119,21 +136,16 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore solution
-        shell: pwsh
-        run: dotnet restore OmniHost.sln
-
       - name: Publish Windows sample artifacts
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ needs.pack-nuget.outputs.version }}
         run: |
           $samples = @(
-            @{ Project = "samples\OmniHost.Sample.Basic\OmniHost.Sample.Basic.csproj"; Name = "OmniHost.Sample.Basic-windows" },
-            @{ Project = "samples\OmniHost.Sample.Cef\OmniHost.Sample.Cef.csproj"; Name = "OmniHost.Sample.Cef-windows" },
-            @{ Project = "samples\OmniHost.Sample.WindowStyles\OmniHost.Sample.WindowStyles.csproj"; Name = "OmniHost.Sample.WindowStyles-windows" },
-            @{ Project = "samples\OmniHost.Sample.WebShowcase\OmniHost.Sample.WebShowcase.csproj"; Name = "OmniHost.Sample.WebShowcase-windows" },
-            @{ Project = "samples\OmniHost.Sample.CrossPlatform\OmniHost.Sample.CrossPlatform.csproj"; Name = "OmniHost.Sample.CrossPlatform-windows"; Framework = "net8.0-windows" }
+            @{ Project = "samples\NativeWebHost.Sample.Basic\NativeWebHost.Sample.Basic.csproj"; Name = "NativeWebHost.Sample.Basic-windows" },
+            @{ Project = "samples\NativeWebHost.Sample.WindowStyles\NativeWebHost.Sample.WindowStyles.csproj"; Name = "NativeWebHost.Sample.WindowStyles-windows" },
+            @{ Project = "samples\NativeWebHost.Sample.WebShowcase\NativeWebHost.Sample.WebShowcase.csproj"; Name = "NativeWebHost.Sample.WebShowcase-windows" },
+            @{ Project = "samples\NativeWebHost.Sample.CrossPlatform\NativeWebHost.Sample.CrossPlatform.csproj"; Name = "NativeWebHost.Sample.CrossPlatform-windows"; Framework = "net10.0-windows" }
           )
 
           New-Item -ItemType Directory -Path artifacts\release -Force | Out-Null
@@ -145,7 +157,6 @@ jobs:
             $arguments = @(
               "publish", $sample.Project,
               "-c", $env:CONFIGURATION,
-              "--no-restore",
               "-o", $publishDir,
               "-p:ContinuousIntegrationBuild=true",
               "-p:Version=$env:PACKAGE_VERSION"
@@ -195,26 +206,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Install NativeAOT prerequisites
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang zlib1g-dev
-
-      - name: Restore Linux sample projects
-        shell: bash
-        run: |
-          set -euo pipefail
-          projects=(
-            "samples/OmniHost.Sample.Gtk/OmniHost.Sample.Gtk.csproj"
-            "samples/OmniHost.Sample.AotMinimalApi/OmniHost.Sample.AotMinimalApi.csproj"
-          )
-
-          for project in "${projects[@]}"; do
-            dotnet restore "$project"
-          done
-
-          dotnet restore samples/OmniHost.Sample.CrossPlatform/OmniHost.Sample.CrossPlatform.csproj -p:TargetFramework=net8.0
-
       - name: Publish Linux sample artifacts
         shell: bash
         env:
@@ -236,14 +227,12 @@ jobs:
               dotnet publish "$project" \
                 -c "$CONFIGURATION" \
                 -f "$framework" \
-                --no-restore \
                 -o "$publish_dir" \
                 -p:ContinuousIntegrationBuild=true \
                 -p:Version="$PACKAGE_VERSION"
             else
               dotnet publish "$project" \
                 -c "$CONFIGURATION" \
-                --no-restore \
                 -o "$publish_dir" \
                 -p:ContinuousIntegrationBuild=true \
                 -p:Version="$PACKAGE_VERSION"
@@ -257,9 +246,9 @@ jobs:
             )
           }
 
-          publish_sample "samples/OmniHost.Sample.Gtk/OmniHost.Sample.Gtk.csproj" "OmniHost.Sample.Gtk-linux"
-          publish_sample "samples/OmniHost.Sample.CrossPlatform/OmniHost.Sample.CrossPlatform.csproj" "OmniHost.Sample.CrossPlatform-linux" "net8.0"
-          publish_sample "samples/OmniHost.Sample.AotMinimalApi/OmniHost.Sample.AotMinimalApi.csproj" "OmniHost.Sample.AotMinimalApi-linux"
+          publish_sample "samples/NativeWebHost.Sample.Gtk/NativeWebHost.Sample.Gtk.csproj" "NativeWebHost.Sample.Gtk-linux"
+          publish_sample "samples/NativeWebHost.Sample.CrossPlatform/NativeWebHost.Sample.CrossPlatform.csproj" "NativeWebHost.Sample.CrossPlatform-linux" "net10.0"
+          publish_sample "samples/NativeWebHost.Sample.AotMinimalApi/NativeWebHost.Sample.AotMinimalApi.csproj" "NativeWebHost.Sample.AotMinimalApi-linux"
 
       - name: Upload Linux release assets
         uses: actions/upload-artifact@v4
@@ -303,12 +292,13 @@ jobs:
           Release ${tag}
 
           Packages:
-          - Published to GitHub Packages NuGet feed: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          - NativeWebHost
+          - NativeWebHost.Windows
+          - NativeWebHost.Linux
+          - NativeWebHost.Mac
 
-          Download assets:
-          - Source package artifacts (*.nupkg)
-          - Windows sample bundles (*.zip)
-          - Linux sample bundles (*.zip)
+          Feed:
+          - https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
           EOF
 
           if gh release view "$tag" >/dev/null 2>&1; then

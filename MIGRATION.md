@@ -1,28 +1,34 @@
 # Migration Guide
 
-This guide covers the rename from `OmniWebHost*` to `OmniHost*` and the native-shell cleanup.
+This guide covers the rename to `NativeWebHost` and the package consolidation.
 
-## Rename
+## Package Shape
 
-- Repository name: `OmniWebHost` -> `OmniHost`
-- Solution file: `OmniWebHost.sln` -> `OmniHost.sln`
-- Package / assembly / namespace family:
-  - `OmniWebHost` -> `OmniHost`
-  - `OmniWebHost.Abstractions` -> `OmniHost.Abstractions`
-  - `OmniWebHost.Core` -> `OmniHost.Core`
-  - `OmniWebHost.Hosting` -> `OmniHost.Hosting`
-  - `OmniWebHost.Windows` -> `OmniHost.Windows`
+The supported NuGet surface is now four packages:
 
-## Windows Adapter Change
+- `NativeWebHost`
+- `NativeWebHost.Windows`
+- `NativeWebHost.Linux`
+- `NativeWebHost.Mac`
 
-Use `OmniHost.NativeWebView2` instead of the removed `OmniHost.WebView2` package:
+The old split implementation projects were merged and should not be referenced directly:
+
+- `NativeWebHost.Abstractions`
+- `NativeWebHost.Core`
+- `NativeWebHost.Hosting`
+- `NativeWebHost.NativeWebView2`
+- `NativeWebHost.Gtk`
+- `NativeWebHost.WebKitGtk`
+
+## Windows
+
+Use `NativeWebHost` plus `NativeWebHost.Windows`:
 
 ```csharp
-using OmniHost;
-using OmniHost.NativeWebView2;
-using OmniHost.Windows;
+using NativeWebHost;
+using NativeWebHost.Windows;
 
-var app = OmniApp.CreateBuilder(args)
+var app = NativeWebApp.CreateBuilder(args)
     .Configure(options =>
     {
         options.StartUrl = "app://localhost/index.html";
@@ -33,41 +39,34 @@ var app = OmniApp.CreateBuilder(args)
     .Build();
 ```
 
-Update project references:
-
-```xml
-<ProjectReference Include="..\\..\\src\\OmniHost\\OmniHost.csproj" />
-<ProjectReference Include="..\\..\\src\\OmniHost.Windows\\OmniHost.Windows.csproj" />
-<ProjectReference Include="..\\..\\src\\OmniHost.NativeWebView2\\OmniHost.NativeWebView2.csproj" />
+```bash
+dotnet add package NativeWebHost
+dotnet add package NativeWebHost.Windows
 ```
 
-Or package references:
+## Linux
+
+Use `NativeWebHost` plus `NativeWebHost.Linux`:
+
+```csharp
+using NativeWebHost;
+using NativeWebHost.Linux;
+
+builder.UseAdapter(new WebKitGtkAdapterFactory())
+    .UseRuntime(new GtkRuntime());
+```
 
 ```bash
-dotnet add package OmniHost
-dotnet add package OmniHost.Windows
-dotnet add package OmniHost.NativeWebView2
+dotnet add package NativeWebHost
+dotnet add package NativeWebHost.Linux
 ```
 
 ## Removed Paths
 
-The following packages/projects were removed from the supported framework surface:
+The framework no longer carries WinForms, WPF, CefSharp, or the old managed WebView2 shell.
 
-- `OmniHost.WinForms`
-- `OmniHost.WebView2`
-- `OmniHost.Cef`
-- `samples/OmniHost.Sample.Cef`
-
-Use the native OS paths instead:
-
-- Windows: `OmniHost.Windows` + `OmniHost.NativeWebView2`
-- Linux: `OmniHost.Gtk` + `OmniHost.WebKitGtk`
-- macOS: AppKit + WKWebView, planned
-
-## Remote URL Note
-
-If the Git hosting repository is renamed, update your local remote after the server-side rename is complete:
+Remote URL:
 
 ```bash
-git remote set-url origin https://github.com/<owner>/OmniHost.git
+git remote set-url origin https://github.com/IoTSharp/NativeWebHost.git
 ```

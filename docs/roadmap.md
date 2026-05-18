@@ -6,7 +6,7 @@ title: Roadmap
 
 ## Decision
 
-OmniHost keeps one native desktop path per operating system:
+NativeWebHost keeps one native desktop path per operating system:
 
 | OS | Runtime | WebView |
 |----|---------|---------|
@@ -14,18 +14,17 @@ OmniHost keeps one native desktop path per operating system:
 | Linux | GTK 3 | WebKitGTK |
 | macOS | AppKit | WKWebView |
 
-Removed paths: WinForms, the old managed `OmniHost.WebView2` adapter, and CefSharp/CEF.
+Removed paths: WinForms, the old managed `NativeWebHost.WebView2` adapter, and CefSharp/CEF.
 
 ## Current
 
-- Windows: `OmniHost.Windows` + `OmniHost.NativeWebView2`
-- Linux: `OmniHost.Gtk` + `OmniHost.WebKitGtk`
+- Windows: `NativeWebHost` + `NativeWebHost.Windows`
+- Linux: `NativeWebHost` + `NativeWebHost.Linux`
 - Shared: multi-window lifecycle, splash windows, JavaScript bridge, `app://localhost/...` local asset loading
 
 ## Next
 
-- Add `OmniHost.AppKit` runtime.
-- Add `OmniHost.WKWebView` adapter.
+- Implement `NativeWebHost.Mac` with AppKit + WKWebView.
 - Bring macOS bridge, custom-scheme loading, and window management to parity with Windows/Linux.
 - Add packaging guidance for:
   - Windows fixed WebView2 runtime when Evergreen cannot be assumed
@@ -34,9 +33,9 @@ Removed paths: WinForms, the old managed `OmniHost.WebView2` adapter, and CefSha
 
 ## Samples
 
-- `samples/OmniHost.Sample.Basic`
-- `samples/OmniHost.Sample.CrossPlatform`
-- `samples/OmniHost.Sample.Gtk`
-- `samples/OmniHost.Sample.WindowStyles`
-- `samples/OmniHost.Sample.WebShowcase`
-- `samples/OmniHost.Sample.AotMinimalApi`
+- `samples/NativeWebHost.Sample.Basic`
+- `samples/NativeWebHost.Sample.CrossPlatform`
+- `samples/NativeWebHost.Sample.Gtk`
+- `samples/NativeWebHost.Sample.WindowStyles`
+- `samples/NativeWebHost.Sample.WebShowcase`
+- `samples/NativeWebHost.Sample.AotMinimalApi`

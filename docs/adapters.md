@@ -4,17 +4,17 @@ title: Adapters
 
 # Adapters
 
-OmniHost uses a pluggable adapter model. Each adapter wraps the native WebView engine for one platform.
+NativeWebHost uses a pluggable adapter model. Each adapter wraps the native WebView engine for one platform.
 
 ## Available Adapters
 
 | Package | Engine | Platform | Status |
 |---------|--------|----------|--------|
-| `OmniHost.NativeWebView2` | WebView2 via WebView2Aot COM bindings | Windows 10/11 | Primary |
-| `OmniHost.WebKitGtk` | WebKitGTK | Linux | Experimental |
-| `OmniHost.WKWebView` | WKWebView | macOS | Planned |
+| `NativeWebHost.Windows` | WebView2 via WebView2Aot COM bindings | Windows 10/11 | Primary |
+| `NativeWebHost.Linux` | WebKitGTK | Linux | Experimental |
+| `NativeWebHost.Mac` | WKWebView | macOS | Planned |
 
-Removed adapters: `OmniHost.WebView2` and `OmniHost.Cef`. The framework no longer keeps a CefSharp/WinForms path.
+Removed adapters: `NativeWebHost.WebView2` and `NativeWebHost.Cef`. The framework no longer keeps a CefSharp/WinForms path.
 
 ## Native Windows Adapter
 
@@ -23,7 +23,7 @@ Removed adapters: `OmniHost.WebView2` and `OmniHost.Cef`. The framework no longe
 .UseRuntime(new Win32Runtime())
 ```
 
-`OmniHost.NativeWebView2` supports:
+`NativeWebHost.Windows` supports:
 
 - HWND host surfaces
 - JavaScript bridge
@@ -49,9 +49,9 @@ Current Linux limitations:
 
 ## Implementing an Adapter
 
-1. Reference `OmniHost.Abstractions`.
+1. Reference `NativeWebHost`.
 2. Implement `IWebViewAdapterFactory`.
 3. Implement `IWebViewAdapter`.
 4. Report supported `HostSurfaceKind` values through `BrowserCapabilities.SupportedHostSurfaces`.
 
-Adapters should own browser-engine initialization, navigation, JavaScript bridge wiring, and browser-specific capabilities. Native window creation belongs in a runtime package such as `OmniHost.Windows` or `OmniHost.Gtk`.
+Adapters should own browser-engine initialization, navigation, JavaScript bridge wiring, and browser-specific capabilities. Native window creation belongs in a runtime package such as `NativeWebHost.Windows` or `NativeWebHost.Linux`.

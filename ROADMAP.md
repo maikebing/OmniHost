@@ -2,7 +2,7 @@
 
 ## Native Platform Direction
 
-OmniHost keeps one native runtime and one native WebView adapter per operating system.
+NativeWebHost keeps one native runtime and one native WebView adapter per operating system.
 
 | OS | Runtime | WebView | Package status |
 |----|---------|---------|----------------|
@@ -12,10 +12,10 @@ OmniHost keeps one native runtime and one native WebView adapter per operating s
 
 Removed from the framework surface:
 
-- `OmniHost.WinForms`
-- `OmniHost.WebView2`
-- `OmniHost.Cef`
-- `samples/OmniHost.Sample.Cef`
+- `NativeWebHost.WinForms`
+- `NativeWebHost.WebView2`
+- `NativeWebHost.Cef`
+- `samples/NativeWebHost.Sample.Cef`
 
 The goal is a single application model for downstream projects such as Cosmos and IoTCoWork: ASP.NET Core / Blazor / static web assets in the application layer, with a platform-native desktop shell selected at startup or publish time.
 
@@ -34,11 +34,10 @@ The goal is a single application model for downstream projects such as Cosmos an
 
 ## Next Milestones
 
-1. Stabilize `OmniHost.NativeWebView2` as the only Windows adapter.
+1. Stabilize `NativeWebHost.Windows` as the only Windows adapter.
 2. Validate Linux packaging with bundled GTK/WebKitGTK native libraries where possible.
-3. Add `OmniHost.AppKit`.
-4. Add `OmniHost.WKWebView`.
-5. Add macOS packaging helpers for `.app` and `.dmg`.
+3. Implement `NativeWebHost.Mac` with AppKit + WKWebView.
+4. Add macOS packaging helpers for `.app` and `.dmg`.
 
 ## Packaging Principle
 

@@ -17,17 +17,15 @@ End-user packages should carry any native dependencies that are not guaranteed b
 Windows:
 
 ```bash
-dotnet add package OmniHost
-dotnet add package OmniHost.Windows
-dotnet add package OmniHost.NativeWebView2
+dotnet add package NativeWebHost
+dotnet add package NativeWebHost.Windows
 ```
 
 Linux:
 
 ```bash
-dotnet add package OmniHost
-dotnet add package OmniHost.Gtk
-dotnet add package OmniHost.WebKitGtk
+dotnet add package NativeWebHost
+dotnet add package NativeWebHost.Linux
 ```
 
 ## Your First Windows App
@@ -35,14 +33,13 @@ dotnet add package OmniHost.WebKitGtk
 Create a project targeting `net10.0-windows`:
 
 ```csharp
-using OmniHost;
-using OmniHost.NativeWebView2;
-using OmniHost.Windows;
+using NativeWebHost;
+using NativeWebHost.Windows;
 
-var app = OmniApp.CreateBuilder(args)
+var app = NativeWebApp.CreateBuilder(args)
     .Configure(o =>
     {
-        o.Title = "Hello OmniHost";
+        o.Title = "Hello NativeWebHost";
         o.CustomScheme = "app";
         o.ContentRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
         o.StartUrl = "app://localhost/index.html";
@@ -85,14 +82,14 @@ Add `wwwroot/index.html`:
     <script>
       document.getElementById('btn').onclick = async () => {
         document.getElementById('out').textContent =
-          await omni.invoke('greet', 'World');
+          await nativeWeb.invoke('greet', 'World');
       };
     </script>
   </body>
 </html>
 ```
 
-The `omni` bridge helper is injected automatically. `NativeWebView2AdapterFactory` also registers the configured `app://localhost/...` scheme for local assets.
+The `nativeWeb` bridge helper is injected automatically. `NativeWebView2AdapterFactory` also registers the configured `app://localhost/...` scheme for local assets.
 
 ## Cross-Platform Switch
 
@@ -115,19 +112,19 @@ else if (OperatingSystem.IsMacOS())
 }
 ```
 
-See `samples/OmniHost.Sample.CrossPlatform` for the current working Windows/Linux sample.
+See `samples/NativeWebHost.Sample.CrossPlatform` for the current working Windows/Linux sample.
 
 ## Options
 
 Common host options include:
 
-- `WindowStyle = OmniWindowStyle.Frameless`
-- `WindowStyle = OmniWindowStyle.DwmBlurGlass` on Windows
-- `WindowStyle = OmniWindowStyle.VsCode`
-- `BuiltInTitleBarStyle = OmniBuiltInTitleBarStyle.VsCode` or `Office`
-- `ScrollBarMode = OmniScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
+- `WindowStyle = NativeWebWindowStyle.Frameless`
+- `WindowStyle = NativeWebWindowStyle.DwmBlurGlass` on Windows
+- `WindowStyle = NativeWebWindowStyle.VsCode`
+- `BuiltInTitleBarStyle = NativeWebBuiltInTitleBarStyle.VsCode` or `Office`
+- `ScrollBarMode = NativeWebScrollBarMode.Auto`, `Hidden`, `VerticalOnly`, or `Custom`
 - `AddWindow("secondary", options => { ... })`
-- `IWindowAwareDesktopApp` with `IOmniWindowManager`
+- `IWindowAwareDesktopApp` with `INativeWebWindowManager`
 
 `Win32Runtime` creates its own STA thread and runs a raw Win32 message loop. It has no WinForms or WPF dependency and is suitable for Native AOT-oriented applications.
 

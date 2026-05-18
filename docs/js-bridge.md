@@ -6,22 +6,22 @@ title: JS Bridge
 
 The JS Bridge (`IJsBridge`) provides **bidirectional** communication between .NET and JavaScript running in the WebView.
 
-## Injected Helper — `omni`
+## Injected Helper — `nativeWeb`
 
-OmniHost automatically injects a lightweight bridge script into every page at document-creation time (before any page script runs). You do **not** need to add a script tag.
+NativeWebHost automatically injects a lightweight bridge script into every page at document-creation time (before any page script runs). You do **not** need to add a script tag.
 
 ```js
-// omni is always available in OmniHost pages
-omni.invoke(handler, data) → Promise<any>
-omni.on(eventName, callback)
-omni.window.minimize()
-omni.window.maximize()
-omni.window.close()
-omni.window.startDrag()
-omni.window.showSystemMenu()
-omni.on('window.stateChanged', callback)
-omni.on('window.closing', callback)
-omni.on('window.closed', callback)
+// nativeWeb is always available in NativeWebHost pages
+nativeWeb.invoke(handler, data) → Promise<any>
+nativeWeb.on(eventName, callback)
+nativeWeb.window.minimize()
+nativeWeb.window.maximize()
+nativeWeb.window.close()
+nativeWeb.window.startDrag()
+nativeWeb.window.showSystemMenu()
+nativeWeb.on('window.stateChanged', callback)
+nativeWeb.on('window.closing', callback)
+nativeWeb.on('window.closed', callback)
 ```
 
 ---
@@ -41,21 +41,21 @@ adapter.JsBridge.RegisterHandler("greet", async payload =>
 Call it from JavaScript:
 
 ```js
-const greeting = await omni.invoke('greet', 'Alice');
+const greeting = await nativeWeb.invoke('greet', 'Alice');
 console.log(greeting); // "Hello, Alice!"
 ```
 
 The call returns a `Promise` that resolves with the parsed return value.
 
-For custom window chrome, pages can mark any drag region with the `omni-drag`
-attribute. OmniHost automatically wires these regions so:
+For custom window chrome, pages can mark any drag region with the `native-web-drag`
+attribute. NativeWebHost automatically wires these regions so:
 
 - Left-drag moves the window
 - Double-click toggles maximize / restore
 - Right-click opens the native system menu
 
 The current native window style is also exposed as the CSS variable
-`--omni-window-style` and as the `data-omni-window-style` attribute on
+`--native-web-window-style` and as the `data-native-web-window-style` attribute on
 `document.documentElement`.
 
 On Windows, the host also publishes native lifecycle events back into the page:
@@ -75,11 +75,11 @@ await adapter.JsBridge.PostMessageAsync("tick", "{\"time\":\"12:00:00\"}");
 Subscribe in JavaScript:
 
 ```js
-omni.on('tick', (data) => {
+nativeWeb.on('tick', (data) => {
     console.log('Tick received:', data.time);
 });
 
-omni.on('window.stateChanged', (data) => {
+nativeWeb.on('window.stateChanged', (data) => {
     console.log('Window state:', data.state, data.width, data.height);
 });
 ```

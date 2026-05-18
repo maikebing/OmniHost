@@ -10,12 +10,12 @@ permissions:
   contents: read
 
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 10.0.x
   CONFIGURATION: Release
 
 jobs:
   build-windows:
-    name: Build Windows Solution
+    name: Build Framework Packages
     runs-on: windows-latest
 
     steps:
@@ -27,17 +27,17 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore solution
+      - name: Restore
         shell: pwsh
-        run: dotnet restore OmniHost.sln
+        run: dotnet restore NativeWebHost.sln
 
-      - name: Build solution
+      - name: Build
         shell: pwsh
-        run: dotnet build OmniHost.sln -c $env:CONFIGURATION --no-restore -p:ContinuousIntegrationBuild=true
+        run: dotnet build NativeWebHost.sln -c $env:CONFIGURATION --no-restore -p:ContinuousIntegrationBuild=true
 
-  build-linux:
-    name: Build Linux Projects
-    runs-on: ubuntu-latest
+  build-samples:
+    name: Build Samples
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -48,48 +48,34 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore Linux-compatible projects
-        shell: bash
+      - name: Build Windows samples
+        shell: pwsh
         run: |
-          set -euo pipefail
-          projects=(
-            "src/OmniHost.Abstractions/OmniHost.Abstractions.csproj"
-            "src/OmniHost.Core/OmniHost.Core.csproj"
-            "src/OmniHost/OmniHost.csproj"
-            "src/OmniHost.Hosting/OmniHost.Hosting.csproj"
-            "src/OmniHost.Gtk/OmniHost.Gtk.csproj"
-            "src/OmniHost.WebKitGtk/OmniHost.WebKitGtk.csproj"
-            "samples/OmniHost.Sample.Gtk/OmniHost.Sample.Gtk.csproj"
-            "samples/OmniHost.Sample.AotMinimalApi/OmniHost.Sample.AotMinimalApi.csproj"
+          $projects = @(
+            "samples\NativeWebHost.Sample.Basic\NativeWebHost.Sample.Basic.csproj",
+            "samples\NativeWebHost.Sample.WindowStyles\NativeWebHost.Sample.WindowStyles.csproj",
+            "samples\NativeWebHost.Sample.WebShowcase\NativeWebHost.Sample.WebShowcase.csproj",
+            "samples\NativeWebHost.Sample.CrossPlatform\NativeWebHost.Sample.CrossPlatform.csproj"
           )
 
-          for project in "${projects[@]}"; do
-            dotnet restore "$project"
-          done
+          foreach ($project in $projects) {
+            dotnet build $project -c $env:CONFIGURATION -p:ContinuousIntegrationBuild=true
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          }
 
-          dotnet restore samples/OmniHost.Sample.CrossPlatform/OmniHost.Sample.CrossPlatform.csproj -p:TargetFramework=net8.0
-
-      - name: Build Linux-compatible projects
-        shell: bash
+      - name: Build Linux-compatible samples
+        shell: pwsh
         run: |
-          set -euo pipefail
-          projects=(
-            "src/OmniHost.Abstractions/OmniHost.Abstractions.csproj"
-            "src/OmniHost.Core/OmniHost.Core.csproj"
-            "src/OmniHost/OmniHost.csproj"
-            "src/OmniHost.Hosting/OmniHost.Hosting.csproj"
-            "src/OmniHost.Gtk/OmniHost.Gtk.csproj"
-            "src/OmniHost.WebKitGtk/OmniHost.WebKitGtk.csproj"
-            "samples/OmniHost.Sample.Gtk/OmniHost.Sample.Gtk.csproj"
-            "samples/OmniHost.Sample.AotMinimalApi/OmniHost.Sample.AotMinimalApi.csproj"
+          $projects = @(
+            "samples\NativeWebHost.Sample.Gtk\NativeWebHost.Sample.Gtk.csproj",
+            "samples\NativeWebHost.Sample.AotMinimalApi\NativeWebHost.Sample.AotMinimalApi.csproj"
           )
 
-          for project in "${projects[@]}"; do
-            dotnet build "$project" -c "$CONFIGURATION" --no-restore -p:ContinuousIntegrationBuild=true
-          done
-
-          dotnet build samples/OmniHost.Sample.CrossPlatform/OmniHost.Sample.CrossPlatform.csproj \
-            -c "$CONFIGURATION" \
-            -f net8.0 \
-            --no-restore \
-            -p:ContinuousIntegrationBuild=true
+          foreach ($project in $projects) {
+            dotnet build $project -c $env:CONFIGURATION -p:ContinuousIntegrationBuild=true
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          }

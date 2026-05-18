@@ -6,12 +6,11 @@ title: Architecture
 
 ## Overview
 
-OmniHost is split into shared host coordination, native OS runtimes, and native WebView adapters:
+NativeWebHost is split into one shared framework package and one native adapter package per operating system:
 
 - application code configures the host
-- `OmniHost` exposes `OmniApp.CreateBuilder`
-- `OmniHost.Core` coordinates windows and adapters
-- `OmniHost.Abstractions` defines shared contracts
+- `NativeWebHost` exposes `NativeWebApp.CreateBuilder`
+- `NativeWebHost` also contains the shared contracts, host coordination, and hosting helpers
 - platform runtimes create native windows and run native event loops
 - browser adapters embed the platform WebView into the host surface
 
@@ -21,16 +20,12 @@ The project intentionally avoids WinForms, WPF, CefSharp.WinForms, Electron, Tau
 
 | Package | Role |
 |---------|------|
-| `OmniHost.Abstractions` | Public interfaces and model types |
-| `OmniHost.Core` | Builder pattern, app runner, and host-window coordination |
-| `OmniHost` | Top-level package exposing `OmniApp.CreateBuilder` |
-| `OmniHost.Hosting` | Integration with `Microsoft.Extensions.Hosting` |
-| `OmniHost.Windows` | Raw Win32 runtime and host-window implementation |
-| `OmniHost.NativeWebView2` | Native WebView2 adapter for Windows |
-| `OmniHost.Gtk` | GTK runtime and host-window implementation for Linux |
-| `OmniHost.WebKitGtk` | WebKitGTK adapter for Linux |
+| `NativeWebHost` | Public contracts, builder, host coordination, ASP.NET Core integration |
+| `NativeWebHost.Windows` | Raw Win32 runtime and native WebView2 adapter |
+| `NativeWebHost.Linux` | GTK runtime and WebKitGTK adapter |
+| `NativeWebHost.Mac` | AppKit runtime and WKWebView adapter placeholder |
 
-Planned macOS packages are an AppKit runtime and WKWebView adapter.
+The public NuGet surface is intentionally limited to these four packages.
 
 ## Platform Choice
 
@@ -54,18 +49,18 @@ Planned macOS packages are an AppKit runtime and WKWebView adapter.
 
 `IMultiWindowDesktopRuntime` extends a runtime with startup and dynamic multi-window support.
 
-`IWindowAwareDesktopApp`, `OmniWindowContext`, and `IOmniWindowManager` provide per-window lifecycle and dynamic window operations.
+`IWindowAwareDesktopApp`, `NativeWebWindowContext`, and `INativeWebWindowManager` provide per-window lifecycle and dynamic window operations.
 
 ## Entry Point Flow
 
 ```text
-OmniApp.CreateBuilder(args)
-  -> OmniHostBuilder
-    .Configure(...)         -> set OmniHostOptions
+NativeWebApp.CreateBuilder(args)
+  -> NativeWebHostBuilder
+    .Configure(...)         -> set NativeWebHostOptions
     .UseAdapter(factory)    -> register adapter factory
     .UseRuntime(runtime)    -> select native OS runtime
     .Build()
-  -> IOmniHostApp
+  -> INativeWebHostApp
     .RunAsync()
       -> HostWindowCoordinator.RunMainWindow(...)
       -> IWebViewAdapterFactory.Create()
