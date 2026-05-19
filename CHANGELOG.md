@@ -51,6 +51,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added one adapter sample per operating system under `samples/NativeWebHost.Sample.Windows`, `samples/NativeWebHost.Sample.Linux`, and `samples/NativeWebHost.Sample.Mac`.
 - Linux GTK host windows now register richer `nativeWeb.window.*` bridge handlers, including drag start, better state synchronization, and best-effort system-menu support.
 - `NativeWebHost.Linux` now serves `app://` assets through a native WebKitGTK URI scheme handler instead of relying on `file://` URL translation.
+- `NativeWebHost.Android`, an experimental Android Activity + system WebView adapter package.
+- Android APK/AAB asset loading from `wwwroot`, JavaScript bridge injection, and same-origin `/api/...` fetch interception for app-provided handlers.
 
 ### Changed
 

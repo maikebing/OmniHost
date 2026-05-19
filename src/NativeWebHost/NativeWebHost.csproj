@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net10.0-android</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>NativeWebHost</RootNamespace>
@@ -10,8 +10,15 @@
     <Description>NativeWebHost – a cross-platform .NET desktop WebView hosting framework.</Description>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0-android'">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+    <Compile Remove="NativeWebApplication.cs" />
+    <Compile Remove="NativeWebApplicationBuilder.cs" />
+    <Compile Remove="NativeWebApplicationHost.cs" />
+    <Compile Remove="Hosting\**\*.cs" />
   </ItemGroup>
 
 </Project>

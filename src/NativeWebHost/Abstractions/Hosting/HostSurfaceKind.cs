@@ -29,4 +29,9 @@ public enum HostSurfaceKind
     /// An offscreen or texture-backed rendering surface.
     /// </summary>
     Offscreen = 4,
+
+    /// <summary>
+    /// An Android <c>WebView</c>-backed host surface.
+    /// </summary>
+    AndroidView = 5,
 }

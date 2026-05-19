@@ -2,7 +2,6 @@ namespace NativeWebHost;
 
 /// <summary>
 /// Builder for configuring and constructing an <see cref="INativeWebHostApp"/>.
-/// Obtain an instance via <see cref="NativeWebApp.CreateBuilder"/>.
 /// </summary>
 public sealed class NativeWebHostBuilder
 {

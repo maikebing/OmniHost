@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NativeWebHost\NativeWebHost.csproj" />
+    <ProjectReference Include="..\NativeWebHost\NativeWebHost.csproj" SetTargetFramework="TargetFramework=net10.0" />
   </ItemGroup>
 
 </Project>

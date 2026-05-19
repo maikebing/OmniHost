@@ -13,6 +13,7 @@ NativeWebHost uses a pluggable adapter model. Each adapter wraps the native WebV
 | `NativeWebHost.Windows` | WebView2 via WebView2Aot COM bindings | Windows 10/11 | Primary |
 | `NativeWebHost.Linux` | WebKitGTK | Linux | Experimental |
 | `NativeWebHost.Mac` | WKWebView | macOS | Experimental |
+| `NativeWebHost.Android` | Android system WebView | Android tablets/phones | Experimental |
 
 Removed adapters: `NativeWebHost.WebView2` and `NativeWebHost.Cef`. The framework no longer keeps a CefSharp/WinForms path.
 
@@ -63,6 +64,28 @@ Current macOS limitations:
 - `MacRuntime` must be started from the process main thread, as required by AppKit
 - notarization/signing is an application packaging responsibility
 
+## Android Adapter
+
+```csharp
+public sealed class MainActivity : NativeWebHostAndroidActivity
+{
+    protected override void ConfigureNativeWebHostOptions(AndroidNativeWebHostOptions options)
+    {
+        options.Title = "My App";
+        options.StartUrl = AndroidWebViewAssetHost.RootUrl;
+        options.AssetRoot = AndroidWebViewAssetHost.DefaultAssetRoot;
+    }
+}
+```
+
+The Android adapter supports system WebView hosting in an Activity, JavaScript bridge wiring, APK/AAB asset loading from `wwwroot`, and same-origin `/api/...` fetch interception for app-provided handlers.
+
+Current Android limitations:
+
+- it does not use the ASP.NET Core `NativeWebApplication` host because `Microsoft.AspNetCore.App` is not available for Android runtime identifiers
+- multi-window desktop APIs are not mapped to Android Activity/task behavior yet
+- app signing, store metadata, and Play distribution are application packaging responsibilities
+
 ## Implementing an Adapter
 
 1. Reference `NativeWebHost`.
@@ -70,4 +93,4 @@ Current macOS limitations:
 3. Implement `IWebViewAdapter`.
 4. Report supported `HostSurfaceKind` values through `BrowserCapabilities.SupportedHostSurfaces`.
 
-Adapters should own browser-engine initialization, navigation, JavaScript bridge wiring, and browser-specific capabilities. Native window creation belongs in a runtime package such as `NativeWebHost.Windows` or `NativeWebHost.Linux`.
+Adapters should own browser-engine initialization, navigation, JavaScript bridge wiring, and browser-specific capabilities. Native window or Activity creation belongs in a runtime package such as `NativeWebHost.Windows`, `NativeWebHost.Linux`, or `NativeWebHost.Android`.

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>$(NativeWebHostAndroidMinimumVersion)</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsAotCompatible>true</IsAotCompatible>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>NativeWebHost.Android</PackageId>
+    <Description>NativeWebHost Android WebView runtime and adapter.</Description>
+    <NoWarn>$(NoWarn);IL2026</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NativeWebHost\NativeWebHost.csproj" SetTargetFramework="TargetFramework=net10.0-android" />
+  </ItemGroup>
+
+</Project>

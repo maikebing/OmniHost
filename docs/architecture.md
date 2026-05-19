@@ -9,8 +9,8 @@ title: Architecture
 NativeWebHost is split into one shared framework package and one native adapter package per operating system:
 
 - application code configures the host
-- `NativeWebHost` exposes `NativeWebApp.CreateBuilder`
-- `NativeWebHost` also contains the shared contracts, host coordination, and hosting helpers
+- `NativeWebHost` exposes `NativeWebApp.CreateBuilder` on desktop TFMs
+- `NativeWebHost` also contains the shared contracts, host coordination, and desktop hosting helpers
 - platform runtimes create native windows and run native event loops
 - browser adapters embed the platform WebView into the host surface
 
@@ -24,8 +24,9 @@ The project intentionally avoids WinForms, WPF, CefSharp.WinForms, Electron, Tau
 | `NativeWebHost.Windows` | Raw Win32 runtime and native WebView2 adapter |
 | `NativeWebHost.Linux` | GTK runtime and WebKitGTK adapter |
 | `NativeWebHost.Mac` | AppKit runtime and WKWebView adapter |
+| `NativeWebHost.Android` | Android Activity base and system WebView adapter |
 
-The public NuGet surface is intentionally limited to these four packages.
+The public NuGet surface is intentionally limited to these platform packages plus the shared package.
 
 ## Platform Choice
 
@@ -34,6 +35,7 @@ The public NuGet surface is intentionally limited to these four packages.
 | Windows | raw Win32 | Native WebView2 | primary, AOT-friendly |
 | Linux | GTK 3 | WebKitGTK | package GTK/WebKitGTK with the app when needed |
 | macOS | AppKit | WKWebView | experimental native path |
+| Android | Activity | system WebView | serves packaged web assets from APK/AAB |
 
 ## Key Interfaces
 
@@ -50,6 +52,8 @@ The public NuGet surface is intentionally limited to these four packages.
 `IMultiWindowDesktopRuntime` extends a runtime with startup and dynamic multi-window support.
 
 `IWindowAwareDesktopApp`, `NativeWebWindowContext`, and `INativeWebWindowManager` provide per-window lifecycle and dynamic window operations.
+
+Android shares the WebView adapter contracts, but uses `NativeWebHostAndroidActivity` instead of the ASP.NET Core `NativeWebApplication` desktop host.
 
 ## Entry Point Flow
 
