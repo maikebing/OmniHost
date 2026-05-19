@@ -14,7 +14,7 @@ NativeWebHost lets a .NET application host a web UI inside a native desktop wind
 |----|----------------|-----------------|--------|
 | Windows | raw Win32 in `NativeWebHost.Windows` | WebView2 in `NativeWebHost.Windows` | Primary path |
 | Linux | GTK 3 in `NativeWebHost.Linux` | WebKitGTK in `NativeWebHost.Linux` | Experimental |
-| macOS | AppKit in `NativeWebHost.Mac` | WKWebView in `NativeWebHost.Mac` | Planned |
+| macOS | AppKit in `NativeWebHost.Mac` | WKWebView in `NativeWebHost.Mac` | Experimental |
 
 Removed paths: `NativeWebHost.WinForms`, `NativeWebHost.WebView2`, and `NativeWebHost.Cef`. The Windows path is now raw Win32 plus WebView2Aot-based native WebView2, with no WinForms or WPF dependency.
 
@@ -43,7 +43,7 @@ var app = NativeWebApp.CreateBuilder(args)
 await app.RunAsync();
 ```
 
-`NativeWebHost.Windows` supports `app://localhost/...` local assets, JavaScript bridge injection, custom window chrome helpers, and built-in title-bar presets.
+`NativeWebHost.Windows`, `NativeWebHost.Linux`, and `NativeWebHost.Mac` support `app://localhost/...` local assets, JavaScript bridge injection, and native window hosting for their platform WebView engines.
 
 The `samples` folder contains one adapter sample per operating system: `NativeWebHost.Sample.Windows`, `NativeWebHost.Sample.Linux`, and `NativeWebHost.Sample.Mac`.
 

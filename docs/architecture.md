@@ -23,7 +23,7 @@ The project intentionally avoids WinForms, WPF, CefSharp.WinForms, Electron, Tau
 | `NativeWebHost` | Public contracts, builder, host coordination, ASP.NET Core integration |
 | `NativeWebHost.Windows` | Raw Win32 runtime and native WebView2 adapter |
 | `NativeWebHost.Linux` | GTK runtime and WebKitGTK adapter |
-| `NativeWebHost.Mac` | AppKit runtime and WKWebView adapter placeholder |
+| `NativeWebHost.Mac` | AppKit runtime and WKWebView adapter |
 
 The public NuGet surface is intentionally limited to these four packages.
 
@@ -33,7 +33,7 @@ The public NuGet surface is intentionally limited to these four packages.
 |----|---------|---------|-------|
 | Windows | raw Win32 | Native WebView2 | primary, AOT-friendly |
 | Linux | GTK 3 | WebKitGTK | package GTK/WebKitGTK with the app when needed |
-| macOS | AppKit | WKWebView | planned native path |
+| macOS | AppKit | WKWebView | experimental native path |
 
 ## Key Interfaces
 

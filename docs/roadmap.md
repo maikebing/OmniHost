@@ -24,8 +24,8 @@ Removed paths: WinForms, the old managed `NativeWebHost.WebView2` adapter, and C
 
 ## Next
 
-- Implement `NativeWebHost.Mac` with AppKit + WKWebView.
-- Bring macOS bridge, custom-scheme loading, and window management to parity with Windows/Linux.
+- Harden `NativeWebHost.Mac` AppKit + WKWebView behavior across signed and notarized apps.
+- Continue validating macOS bridge, custom-scheme loading, and window management against Windows/Linux parity.
 - Add packaging guidance for:
   - Windows fixed WebView2 runtime when Evergreen cannot be assumed
   - macOS `.app` / `.dmg`

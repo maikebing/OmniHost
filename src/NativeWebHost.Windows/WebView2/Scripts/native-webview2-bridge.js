@@ -58,5 +58,4 @@
         }
     };
     globalThis.nativeWeb = nativeWebApi;
-    globalThis.omni = nativeWebApi;
 })();

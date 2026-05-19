@@ -37,7 +37,7 @@ public sealed class NativeWebApplicationHost : IAsyncDisposable
             throw new InvalidOperationException("NativeWebApplication can only be run once.");
         }
 
-        await Web.StartAsync(cancellationToken);
+        Web.StartAsync(cancellationToken).GetAwaiter().GetResult();
 
         try
         {

@@ -91,7 +91,6 @@ internal sealed class WebKitGtkJsBridge : IJsBridge
             };
 
             globalThis.nativeWeb = nativeWebApi;
-            globalThis.omni = nativeWebApi;
         })();
         """;
 

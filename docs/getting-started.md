@@ -28,6 +28,13 @@ dotnet add package NativeWebHost
 dotnet add package NativeWebHost.Linux
 ```
 
+macOS:
+
+```bash
+dotnet add package NativeWebHost
+dotnet add package NativeWebHost.Mac
+```
+
 ## Your First Windows App
 
 Create a project targeting `net10.0-windows`:
@@ -108,7 +115,8 @@ else if (OperatingSystem.IsLinux())
 }
 else if (OperatingSystem.IsMacOS())
 {
-    // Planned: AppKit runtime + WKWebView adapter.
+    builder.UseAdapter(new WKWebViewAdapterFactory())
+        .UseRuntime(new MacRuntime());
 }
 ```
 

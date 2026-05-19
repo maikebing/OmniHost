@@ -8,7 +8,7 @@ NativeWebHost keeps one native runtime and one native WebView adapter per operat
 |----|---------|---------|----------------|
 | Windows | raw Win32 | Native WebView2 | implemented |
 | Linux | GTK 3 | WebKitGTK | experimental |
-| macOS | AppKit | WKWebView | planned |
+| macOS | AppKit | WKWebView | experimental |
 
 Removed from the framework surface:
 
@@ -36,8 +36,8 @@ The goal is a single application model for downstream projects such as Cosmos an
 
 1. Stabilize `NativeWebHost.Windows` as the only Windows adapter.
 2. Validate Linux packaging with bundled GTK/WebKitGTK native libraries where possible.
-3. Implement `NativeWebHost.Mac` with AppKit + WKWebView.
-4. Add macOS packaging helpers for `.app` and `.dmg`.
+3. Harden `NativeWebHost.Mac` AppKit + WKWebView runtime behavior across signed and notarized apps.
+4. Keep macOS `.app` / `.dmg` packaging helpers at the application packaging layer.
 
 ## Packaging Principle
 

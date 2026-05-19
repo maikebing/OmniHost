@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-macos</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>NativeWebHost.Mac</RootNamespace>
     <AssemblyName>NativeWebHost.Mac</AssemblyName>
     <Version>0.1.0-preview.3</Version>
     <Description>macOS AppKit runtime and WKWebView adapter for NativeWebHost.</Description>
+    <SupportedOSPlatformVersion>$(NativeWebHostMacOSMinimumVersion)</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <ItemGroup>

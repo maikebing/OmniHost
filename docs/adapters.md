@@ -12,7 +12,7 @@ NativeWebHost uses a pluggable adapter model. Each adapter wraps the native WebV
 |---------|--------|----------|--------|
 | `NativeWebHost.Windows` | WebView2 via WebView2Aot COM bindings | Windows 10/11 | Primary |
 | `NativeWebHost.Linux` | WebKitGTK | Linux | Experimental |
-| `NativeWebHost.Mac` | WKWebView | macOS | Planned |
+| `NativeWebHost.Mac` | WKWebView | macOS | Experimental |
 
 Removed adapters: `NativeWebHost.WebView2` and `NativeWebHost.Cef`. The framework no longer keeps a CefSharp/WinForms path.
 
@@ -46,6 +46,22 @@ Current Linux limitations:
 - window chrome behavior needs validation across more distros and window managers
 - `showSystemMenu` is best-effort and depends on the current GTK/GDK event context
 - shipping without user-installed packages requires app packaging that includes the needed GTK/WebKitGTK native libraries
+
+## macOS Adapter
+
+```csharp
+.UseAdapter(new WKWebViewAdapterFactory())
+.UseRuntime(new MacRuntime())
+```
+
+The macOS adapter supports AppKit `NSView` host surfaces, WKWebView embedding, JavaScript bridge wiring, native `app://localhost/...` asset loading, status item tray menus, and standard AppKit windows.
+
+Current macOS limitations:
+
+- custom frameless dragging is limited by AppKit event payload support
+- DevTools are reported as unavailable for the WKWebView path
+- `MacRuntime` must be started from the process main thread, as required by AppKit
+- notarization/signing is an application packaging responsibility
 
 ## Implementing an Adapter
 
